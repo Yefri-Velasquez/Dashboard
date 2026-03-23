@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-primary: #ffffff; --bg-secondary: #f5f5f2; --bg-tertiary: #eeede8;
+      --text-primary: #1a1a18; --text-secondary: #6b6b68;
+      --text-info: #0c447c; --text-danger: #791f1f; --text-success: #27500a; --text-warning: #633806;
+      --bg-info: #e6f1fb; --bg-danger: #fcebeb; --bg-success: #eaf3de; --bg-warning: #faeeda;
+      --border-faint: rgba(0,0,0,0.1); --border-mid: rgba(0,0,0,0.18);
+      --radius-md: 8px; --radius-lg: 12px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg-primary: #1e1e1c; --bg-secondary: #2a2a27; --bg-tertiary: #222220;
+        --text-primary: #f0efea; --text-secondary: #9b9b97;
+        --text-info: #b5d4f4; --text-danger: #f7c1c1; --text-success: #c0dd97; --text-warning: #fac775;
+        --bg-info: #042c53; --bg-danger: #501313; --bg-success: #173404; --bg-warning: #412402;
+        --border-faint: rgba(255,255,255,0.09); --border-mid: rgba(255,255,255,0.18);
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg-primary: #1e1e1c; --bg-secondary: #2a2a27; --bg-tertiary: #222220;
+      --text-primary: #f0efea; --text-secondary: #9b9b97;
+      --text-info: #b5d4f4; --text-danger: #f7c1c1; --text-success: #c0dd97; --text-warning: #fac775;
+      --bg-info: #042c53; --bg-danger: #501313; --bg-success: #173404; --bg-warning: #412402;
+      --border-faint: rgba(255,255,255,0.09); --border-mid: rgba(255,255,255,0.18);
+    }
+    body { font-family: var(--font); background: var(--bg-tertiary); color: var(--text-primary); min-height: 100vh; padding: 20px 24px; }
+
+    /* ── Header ── */
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; }
+    header h1 { font-size: 17px; font-weight: 500; }
+    .pill { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 0.5px solid var(--border-mid); color: var(--text-secondary); background: var(--bg-primary); cursor: pointer; }
+    .pill:hover { background: var(--bg-secondary); }
+
+    /* ── Main tabs ── */
+    .main-tab-bar { display: flex; gap: 0; margin: 0 0 20px; border-bottom: 0.5px solid var(--border-faint); }
+    .main-tab-btn { font-size: 13px; font-family: var(--font); padding: 12px 18px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); cursor: pointer; margin-bottom: -0.5px; transition: color 0.15s; }
+    .main-tab-btn:hover { color: var(--text-primary); }
+    .main-tab-btn.active { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 500; }
+    .main-tab-content { display: none; }
+    .main-tab-content.active { display: block; }
+
+    /* ── Panels ── */
+    .panel { background: var(--bg-primary); border: 0.5px solid var(--border-faint); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 0.5px solid var(--border-faint); flex-shrink: 0; }
+    .panel-title { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; }
+    .badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 999px; }
+    .badge-blue  { background: var(--bg-info);    color: var(--text-info); }
+    .badge-gray  { background: var(--bg-secondary); color: var(--text-secondary); }
+    .badge-amber { background: var(--bg-warning);  color: var(--text-warning); }
+    .refresh-btn { font-size: 13px; color: var(--text-secondary); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+    .refresh-btn:hover { background: var(--bg-secondary); }
+    .tab-row { display: flex; gap: 4px; padding: 8px 16px 0; flex-shrink: 0; flex-wrap: wrap; }
+    .tab { font-size: 11px; padding: 4px 10px; border-radius: 999px; border: 0.5px solid var(--border-faint); background: none; cursor: pointer; color: var(--text-secondary); font-family: var(--font); }
+    .tab.active { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-mid); }
+    .panel-body { flex: 1; overflow-y: auto; padding: 4px 0; }
+    .item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 16px; border-bottom: 0.5px solid var(--border-faint); text-decoration: none; color: inherit; }
+    .item:last-child { border-bottom: none; }
+    .item:hover { background: var(--bg-secondary); }
+    .avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--bg-info); color: var(--text-info); font-size: 9px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .item-main { flex: 1; min-width: 0; }
+    .item-title { font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; }
+    .dot-open  { background: #639922; }
+    .dot-draft { background: #888780; }
+    .empty, .loading-msg { padding: 32px 16px; text-align: center; font-size: 13px; color: var(--text-secondary); }
+    .err { margin: 8px; padding: 10px 14px; font-size: 12px; color: var(--text-danger); background: var(--bg-danger); border-radius: var(--radius-md); }
+
+    /* ── GitHub tab two-column ── */
+    .github-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; height: calc(100vh - 160px); }
+    @media (max-width: 900px) { .github-layout { grid-template-columns: 1fr; height: auto; } }
+    .github-layout .panel { height: 100%; }
+    .github-layout .panel-body { max-height: none; flex: 1; }
+
+    /* ── CI panel ── */
+    .ci-conclusion { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+    .ci-success  { background: var(--bg-success);  color: var(--text-success); }
+    .ci-failure, .ci-timed_out { background: var(--bg-danger);  color: var(--text-danger); }
+    .ci-in_progress, .ci-queued, .ci-waiting { background: var(--bg-warning); color: var(--text-warning); }
+    .ci-cancelled, .ci-skipped, .ci-neutral { background: var(--bg-secondary); color: var(--text-secondary); }
+    .ci-repo-header { font-size: 11px; font-weight: 600; color: var(--text-secondary); padding: 8px 16px 4px; letter-spacing: 0.04em; border-bottom: 0.5px solid var(--border-faint); background: var(--bg-secondary); }
+    .ci-pr-badge { font-size: 10px; color: var(--text-secondary); margin-left: 4px; }
+
+    /* ── Statuses tab ── */
+    .status-groups { display: flex; flex-direction: column; gap: 20px; }
+    .status-group-label { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .status-table { background: var(--bg-primary); border: 0.5px solid var(--border-faint); border-radius: var(--radius-lg); overflow: hidden; }
+    .status-row { display: flex; align-items: center; gap: 14px; padding: 11px 16px; border-bottom: 0.5px solid var(--border-faint); text-decoration: none; color: inherit; transition: background 0.1s; }
+    .status-row:last-child { border-bottom: none; }
+    .status-row:hover { background: var(--bg-secondary); }
+    .status-logo { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #fff; flex-shrink: 0; letter-spacing: -0.3px; }
+    .status-name { font-size: 13px; font-weight: 500; flex: 1; }
+    .status-ind { display: flex; align-items: center; gap: 7px; }
+    .status-ind-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .ind-ok      { background: #639922; }
+    .ind-warn    { background: #c89a2e; animation: pulse 2s ease-in-out infinite; }
+    .ind-err     { background: #c23b3b; }
+    .ind-unknown { background: var(--border-mid); }
+    .status-ind-text { font-size: 12px; color: var(--text-secondary); }
+    .status-link-btn { font-size: 11px; color: var(--text-info); white-space: nowrap; }
+
+    /* ── Service status dots (panel headers) ── */
+    .svc-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; background: var(--border-mid); transition: background 0.3s; }
+    .svc-dot.ok  { background: #639922; }
+    .svc-dot.err { background: #c23b3b; }
+    .svc-dot.loading { background: #c89a2e; animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ── Settings ── */
+    .settings-view { display: none; }
+    .settings-view.active { display: block; }
+    .dashboard-view { display: block; }
+    .dashboard-view.hidden { display: none; }
+    .settings-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; margin-top: 20px; }
+    .settings-header h2 { font-size: 15px; font-weight: 500; }
+    .settings-sections { display: flex; flex-direction: column; gap: 16px; }
+    .settings-section { background: var(--bg-primary); border: 0.5px solid var(--border-faint); border-radius: var(--radius-lg); padding: 20px; }
+    .settings-section-title { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .settings-section-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5; }
+    .settings-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 600px) { .settings-fields { grid-template-columns: 1fr; } }
+    .settings-fields.triple { grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 800px) { .settings-fields.triple { grid-template-columns: 1fr; } }
+    .settings-actions { margin-top: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 11px; color: var(--text-secondary); }
+    input[type="text"], input[type="password"] { width: 100%; font-size: 13px; font-family: var(--font); padding: 7px 10px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); outline: none; transition: border-color 0.15s; }
+    input:focus { border-color: #378add; box-shadow: 0 0 0 2px rgba(55,138,221,0.14); }
+    .save-btn { font-size: 13px; font-family: var(--font); padding: 7px 18px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; }
+    .save-btn:hover { background: var(--bg-secondary); }
+    .save-btn.primary { background: #1a1a18; color: #f0efea; border-color: #1a1a18; }
+    .save-btn.primary:hover { background: #333; }
+    @media (prefers-color-scheme: dark) {
+      .save-btn.primary { background: #f0efea; color: #1a1a18; border-color: #f0efea; }
+      .save-btn.primary:hover { background: #d0cfc9; }
+    }
+    .saved-msg { font-size: 12px; color: var(--text-success); display: none; }
+    .clear-link { font-size: 12px; color: var(--text-danger); cursor: pointer; text-decoration: underline; background: none; border: none; font-family: var(--font); }
+    .test-row { margin-top: 12px; display: flex; align-items: center; gap: 10px; }
+    .test-btn { font-size: 12px; font-family: var(--font); padding: 5px 14px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; }
+    .test-btn:hover { background: var(--bg-tertiary); }
+    .test-result { font-size: 12px; line-height: 1.4; }
+    .test-result.ok  { color: var(--text-success); }
+    .test-result.err { color: var(--text-danger); }
+    .test-result.checking { color: var(--text-secondary); }
+    .theme-toggle { display: flex; gap: 0; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); overflow: hidden; width: fit-content; }
+    .theme-opt { font-size: 12px; font-family: var(--font); padding: 6px 16px; background: none; border: none; color: var(--text-secondary); cursor: pointer; transition: background 0.15s, color 0.15s; }
+    .theme-opt:not(:last-child) { border-right: 0.5px solid var(--border-mid); }
+    .theme-opt.active { background: var(--bg-secondary); color: var(--text-primary); font-weight: 500; }
+
+    /* ── Service prefs ── */
+    .svc-pref-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .svc-pref-item { display: flex; align-items: center; gap: 7px; padding: 5px 10px 5px 7px; border: 0.5px solid var(--border-faint); border-radius: var(--radius-md); background: var(--bg-secondary); font-size: 12px; cursor: pointer; user-select: none; transition: opacity 0.15s; }
+    .svc-pref-item input[type="checkbox"] { cursor: pointer; accent-color: #378add; }
+    .svc-pref-item.svc-hidden { opacity: 0.45; }
+    .svc-pref-logo { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; color: #fff; flex-shrink: 0; letter-spacing: -0.3px; }
+    .custom-svc-table { margin-top: 10px; border: 0.5px solid var(--border-faint); border-radius: var(--radius-md); overflow: hidden; }
+    .custom-svc-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 0.5px solid var(--border-faint); font-size: 12px; }
+    .custom-svc-row:last-child { border-bottom: none; }
+    .custom-svc-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .remove-svc-btn { font-size: 11px; color: var(--text-danger); background: none; border: none; cursor: pointer; padding: 3px 8px; border-radius: 4px; flex-shrink: 0; }
+    .remove-svc-btn:hover { background: var(--bg-danger); }
+    input[type="color"] { height: 36px; width: 100%; padding: 2px 4px; border-radius: var(--radius-md); border: 0.5px solid var(--border-mid); background: var(--bg-secondary); cursor: pointer; }
+    .add-svc-section { margin-top: 16px; padding-top: 14px; border-top: 0.5px solid var(--border-faint); }
+    .add-svc-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Dev dashboard</h1>
+  <span class="pill" onclick="showSettings()">⚙ Settings</span>
+</header>
+
+<!-- Settings view -->
+<div class="settings-view" id="settings-view">
+  <div class="settings-header">
+    <h2>Settings</h2>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="saved-msg" id="saved-msg">Saved</span>
+      <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="save-creds" /> Remember in browser
+      </label>
+      <button class="clear-link" onclick="clearSaved()">Clear saved</button>
+    </div>
+  </div>
+  <div class="settings-sections">
+
+    <!-- GitHub -->
+    <div class="settings-section">
+      <div class="settings-section-title">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="4" cy="12" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="4" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M4 6v4M6 4h3a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.2"/></svg>
+        GitHub
+      </div>
+      <div class="settings-section-desc">Create a Personal Access Token at <strong>github.com → Settings → Developer settings → Personal access tokens</strong>. Needs <code>repo</code> + <code>notifications</code> scopes. If your org uses SAML SSO, click <strong>Configure SSO</strong> next to the token.
+        <br><br><strong style="color:var(--text-success)">🔒 Privacy:</strong> Your token is stored <em>only</em> in your browser's localStorage. It is never sent to any server — all API calls go directly from your browser to GitHub. Use a <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener" style="color:var(--text-info)">fine-grained token</a> with read-only access for best security.</div>
+      <div class="settings-fields triple">
+        <div class="field">
+          <label for="gh-token">Personal Access Token</label>
+          <input id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxx" />
+        </div>
+        <div class="field">
+          <label for="gh-user">Username</label>
+          <input id="gh-user" type="text" placeholder="your-username" />
+        </div>
+        <div class="field">
+          <label for="gh-repos">Repos to watch (CI)</label>
+          <input id="gh-repos" type="text" placeholder="org/repo1, org/repo2" />
+        </div>
+      </div>
+      <div class="test-row">
+        <button class="test-btn" onclick="testGitHub()">Test connection</button>
+        <span class="test-result" id="gh-test-result"></span>
+      </div>
+    </div>
+
+    <!-- Theme -->
+    <div class="settings-section">
+      <div class="settings-section-title">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.53 11.53l1.42 1.42M3.05 12.95l1.42-1.42M11.53 4.47l1.42-1.42" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Theme
+      </div>
+      <div class="settings-section-desc">Choose between light, dark, or follow your system setting.</div>
+      <div class="theme-toggle">
+        <button class="theme-opt" id="theme-system" onclick="setTheme('system')">System</button>
+        <button class="theme-opt" id="theme-light"  onclick="setTheme('light')">Light</button>
+        <button class="theme-opt" id="theme-dark"   onclick="setTheme('dark')">Dark</button>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="settings-section">
+      <div class="settings-section-title">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
+        Services
+      </div>
+      <div class="settings-section-desc">Toggle which services appear on the Statuses tab. Add custom services using any <a href="https://support.atlassian.com/statuspage/docs/enable-the-status-embed-api/" target="_blank" rel="noopener" style="color:var(--text-info)">Statuspage-compatible</a> API URL — or leave blank for a link-only row.</div>
+      <div class="svc-pref-list" id="svc-pref-list"></div>
+
+      <div class="add-svc-section">
+        <div class="add-svc-label">Add custom service</div>
+        <div class="settings-fields" style="grid-template-columns:2fr 1fr 80px 1fr">
+          <div class="field"><label for="svc-add-name">Name</label><input id="svc-add-name" type="text" placeholder="My Service" /></div>
+          <div class="field"><label for="svc-add-abbr">Abbr (max 5)</label><input id="svc-add-abbr" type="text" placeholder="MS" maxlength="5" /></div>
+          <div class="field"><label for="svc-add-color">Color</label><input id="svc-add-color" type="color" value="#555555" /></div>
+          <div class="field">
+            <label for="svc-add-group">Group</label>
+            <input id="svc-add-group" type="text" placeholder="Developer Tools" list="svc-groups-list" />
+            <datalist id="svc-groups-list">
+              <option value="Developer Tools"/>
+              <option value="Cloud &amp; Network"/>
+              <option value="Communication"/>
+            </datalist>
+          </div>
+        </div>
+        <div class="settings-fields" style="margin-top:8px">
+          <div class="field"><label for="svc-add-url">Status API URL <span style="font-weight:400">(optional — Statuspage <code>/api/v2/summary.json</code>)</span></label><input id="svc-add-url" type="text" placeholder="https://example.statuspage.io/api/v2/summary.json" /></div>
+          <div class="field"><label for="svc-add-link">Status Page URL <span style="font-weight:400">(required)</span></label><input id="svc-add-link" type="text" placeholder="https://status.example.com" /></div>
+        </div>
+        <button class="save-btn" style="margin-top:10px" onclick="addCustomService()">+ Add service</button>
+        <div id="svc-add-err" class="test-result err" style="display:none;margin-top:6px"></div>
+      </div>
+
+      <div id="custom-svc-list"></div>
+    </div>
+
+  </div>
+  <div class="settings-actions">
+    <button class="save-btn primary" onclick="saveSettings()">Save &amp; Load</button>
+    <button class="save-btn" onclick="showDashboard()">Back to dashboard</button>
+  </div>
+</div>
+
+<!-- Dashboard view -->
+<div class="dashboard-view" id="dashboard-view">
+
+  <!-- Main tab bar -->
+  <div class="main-tab-bar">
+    <button class="main-tab-btn active" id="mtab-github"   onclick="switchMainTab('github')">GitHub</button>
+    <button class="main-tab-btn"        id="mtab-statuses" onclick="switchMainTab('statuses')">Statuses</button>
+  </div>
+
+  <!-- GitHub tab -->
+  <div class="main-tab-content active" id="tab-github">
+    <div class="github-layout">
+
+      <!-- PRs -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="4" cy="12" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="4" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M4 6v4M6 4h3a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.2"/></svg>
+            Pull requests
+            <span class="svc-dot" id="gh-svc-dot"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="badge badge-blue" id="pr-count">—</span>
+            <button class="refresh-btn" onclick="loadGH()" title="Refresh">↻</button>
+          </div>
+        </div>
+        <div class="tab-row">
+          <button class="tab active" onclick="setPRTab('authored',this)">authored</button>
+          <button class="tab" onclick="setPRTab('review',this)">review requested</button>
+          <button class="tab" onclick="setPRTab('assigned',this)">assigned</button>
+          <button class="tab" onclick="setPRTab('notifications',this)">notifications <span id="notif-badge" style="display:none"></span></button>
+        </div>
+        <div class="panel-body" id="pr-body">
+          <div class="empty">Configure GitHub credentials in Settings.</div>
+        </div>
+      </div>
+
+      <!-- CI -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 8l2 2 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            CI Status
+            <span class="svc-dot" id="ci-svc-dot"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="badge badge-gray" id="ci-count">—</span>
+            <button class="refresh-btn" onclick="loadCI()" title="Refresh">↻</button>
+          </div>
+        </div>
+        <div class="panel-body" id="ci-body">
+          <div class="empty">Add repos to watch in Settings.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Statuses tab -->
+  <div class="main-tab-content" id="tab-statuses">
+    <div class="status-groups" id="status-groups">
+      <div class="loading-msg">Loading service statuses…</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const prData = { authored: [], review: [], assigned: [], notifications: [] };
+  let currentPRTab = 'authored';
+  let statusesLoaded = false;
+  let svcPrefs = { hidden: [], custom: [] };
+
+  /* ── Theme ── */
+  function setTheme(theme) {
+    const root = document.documentElement;
+    if (theme === 'dark')       root.setAttribute('data-theme', 'dark');
+    else if (theme === 'light') root.setAttribute('data-theme', 'light');
+    else                        root.removeAttribute('data-theme');
+    document.querySelectorAll('.theme-opt').forEach(b => b.classList.remove('active'));
+    document.getElementById(`theme-${theme}`)?.classList.add('active');
+    localStorage.setItem('dev-dash-theme', theme);
+  }
+
+  /* ── Main tab switching ── */
+  function switchMainTab(tab) {
+    document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(`mtab-${tab}`).classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    if (tab === 'statuses' && !statusesLoaded) { loadStatuses(); statusesLoaded = true; }
+  }
+
+  /* ── Service preferences ── */
+  function loadServicePrefs() {
+    try {
+      const s = JSON.parse(localStorage.getItem('dev-dash-svc') || '{}');
+      svcPrefs.hidden = Array.isArray(s.hidden) ? s.hidden : [];
+      svcPrefs.custom = Array.isArray(s.custom) ? s.custom : [];
+    } catch(_) {}
+  }
+
+  function saveServicePrefs() {
+    localStorage.setItem('dev-dash-svc', JSON.stringify(svcPrefs));
+    statusesLoaded = false;
+  }
+
+  function renderServicePrefs() {
+    const list = document.getElementById('svc-pref-list');
+    list.innerHTML = STATUS_SERVICES.flatMap(g => g.services).map(svc => {
+      const hidden = svcPrefs.hidden.includes(svc.id);
+      return `<label class="svc-pref-item${hidden ? ' svc-hidden' : ''}">
+        <input type="checkbox" ${hidden ? '' : 'checked'} onchange="toggleBuiltinService('${svc.id}', this.checked)" />
+        <div class="svc-pref-logo" style="background:${svc.color}">${esc(svc.abbr)}</div>
+        ${esc(svc.name)}
+      </label>`;
+    }).join('');
+    renderCustomServicesList();
+  }
+
+  function renderCustomServicesList() {
+    const el = document.getElementById('custom-svc-list');
+    if (!svcPrefs.custom.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div class="custom-svc-table" style="margin-top:12px">${svcPrefs.custom.map(svc => `
+      <div class="custom-svc-row">
+        <div class="svc-pref-logo" style="background:${esc(svc.color)}">${esc(svc.abbr)}</div>
+        <div class="custom-svc-meta">
+          <span style="font-weight:500">${esc(svc.name)}</span>
+          <span style="color:var(--text-secondary);font-size:11px">${esc(svc.group)}${svc.url ? ' · ' + esc(svc.url) : ' · link only'}</span>
+        </div>
+        <button class="remove-svc-btn" onclick="removeCustomService('${esc(svc.id)}')">Remove</button>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  function toggleBuiltinService(id, visible) {
+    if (visible) {
+      svcPrefs.hidden = svcPrefs.hidden.filter(h => h !== id);
+    } else {
+      if (!svcPrefs.hidden.includes(id)) svcPrefs.hidden.push(id);
+    }
+    saveServicePrefs();
+    // Update chip opacity immediately
+    document.querySelectorAll('.svc-pref-item').forEach(item => {
+      item.classList.toggle('svc-hidden', !item.querySelector('input').checked);
+    });
+  }
+
+  function addCustomService() {
+    const name  = document.getElementById('svc-add-name').value.trim();
+    const abbr  = document.getElementById('svc-add-abbr').value.trim();
+    const color = document.getElementById('svc-add-color').value;
+    const group = document.getElementById('svc-add-group').value.trim();
+    const url   = document.getElementById('svc-add-url').value.trim();
+    const link  = document.getElementById('svc-add-link').value.trim();
+    const errEl = document.getElementById('svc-add-err');
+    errEl.style.display = 'none';
+    if (!name || !abbr || !group || !link) {
+      errEl.textContent = 'Name, abbreviation, group, and status page URL are required.';
+      errEl.style.display = 'block'; return;
+    }
+    const id = 'custom_' + Date.now();
+    svcPrefs.custom.push({ id, name, abbr, color, group, url: url || null, link, type: url ? 'statuspage' : 'link' });
+    saveServicePrefs();
+    renderCustomServicesList();
+    document.getElementById('svc-add-name').value = '';
+    document.getElementById('svc-add-abbr').value = '';
+    document.getElementById('svc-add-color').value = '#555555';
+    document.getElementById('svc-add-group').value = '';
+    document.getElementById('svc-add-url').value = '';
+    document.getElementById('svc-add-link').value = '';
+  }
+
+  function removeCustomService(id) {
+    svcPrefs.custom = svcPrefs.custom.filter(s => s.id !== id);
+    saveServicePrefs();
+    renderCustomServicesList();
+  }
+
+  /* ── Navigation ── */
+  function showSettings() {
+    document.getElementById('settings-view').classList.add('active');
+    document.getElementById('dashboard-view').classList.add('hidden');
+    renderServicePrefs();
+  }
+
+  function showDashboard() {
+    document.getElementById('settings-view').classList.remove('active');
+    document.getElementById('dashboard-view').classList.remove('hidden');
+  }
+
+  function saveSettings() {
+    maybeSave();
+    const msg = document.getElementById('saved-msg');
+    msg.style.display = 'inline';
+    setTimeout(() => { msg.style.display = 'none'; }, 2000);
+    statusesLoaded = false; // force reload on next tab visit
+    loadAll();
+    showDashboard();
+  }
+
+  /* ── Persistence ── */
+  function loadSaved() {
+    try {
+      const s = JSON.parse(localStorage.getItem('dev-dash') || '{}');
+      if (s.ghToken) document.getElementById('gh-token').value = s.ghToken;
+      if (s.ghUser)  document.getElementById('gh-user').value  = s.ghUser;
+      if (s.ghRepos) document.getElementById('gh-repos').value = s.ghRepos;
+      if (s.ghToken || s.ghUser) document.getElementById('save-creds').checked = true;
+    } catch(_) {}
+  }
+
+  function maybeSave() {
+    if (!document.getElementById('save-creds').checked) return;
+    localStorage.setItem('dev-dash', JSON.stringify({
+      ghToken: document.getElementById('gh-token').value,
+      ghUser:  document.getElementById('gh-user').value,
+      ghRepos: document.getElementById('gh-repos').value,
+    }));
+  }
+
+  function clearSaved() {
+    localStorage.removeItem('dev-dash');
+    document.getElementById('save-creds').checked = false;
+    alert('Saved credentials cleared.');
+  }
+
+  /* ── Connection test ── */
+  async function testGitHub() {
+    const token = document.getElementById('gh-token').value.trim();
+    const user  = document.getElementById('gh-user').value.trim();
+    const el    = document.getElementById('gh-test-result');
+    if (!token) { el.className = 'test-result err'; el.textContent = 'Enter a token first.'; return; }
+    el.className = 'test-result checking'; el.textContent = 'Checking…';
+    try {
+      const res  = await fetch('https://api.github.com/user', {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const hint = res.status === 401 ? 'Invalid token.'
+                   : data.message?.includes('SSO') ? 'Token needs SSO authorization — github.com → token → Configure SSO.'
+                   : data.message || `HTTP ${res.status}`;
+        el.className = 'test-result err'; el.textContent = `Failed: ${hint}`; return;
+      }
+      const login = data.login || '';
+      if (user && login.toLowerCase() !== user.toLowerCase()) {
+        el.className = 'test-result err';
+        el.textContent = `Token belongs to @${login}, not @${user} — update your username.`; return;
+      }
+      el.className = 'test-result ok';
+      el.textContent = `Connected as @${login}${data.name ? ' ('+data.name+')' : ''}`;
+    } catch(e) { el.className = 'test-result err'; el.textContent = `Network error: ${e.message}`; }
+  }
+
+  /* ── Service status dots ── */
+  function setStatus(id, state) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'svc-dot' + (state !== 'idle' ? ' ' + state : '');
+    el.title = { loading: 'Connecting…', ok: 'Connected', err: 'Error', idle: 'Not configured' }[state] || state;
+  }
+
+  /* ── GitHub PRs ── */
+  function setPRTab(tab, el) {
+    currentPRTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderPRs();
+  }
+
+  function renderPRs() {
+    const body = document.getElementById('pr-body');
+    if (currentPRTab === 'notifications') { renderNotifications(); return; }
+    const items = prData[currentPRTab];
+    const total = prData.authored.length + prData.review.length + prData.assigned.length;
+    if (!items.length) {
+      body.innerHTML = total === 0 && currentPRTab === 'authored'
+        ? '<div class="empty">No PRs found.<br><span style="font-size:11px">Token may need SSO authorization:<br>github.com → Tokens → Configure SSO.</span></div>'
+        : '<div class="empty">No open PRs here.</div>';
+      return;
+    }
+    body.innerHTML = items.map(pr => {
+      const repo = pr.repository_url.replace('https://api.github.com/repos/', '');
+      const isDraft = pr.draft;
+      return `<a class="item" href="${pr.html_url}" target="_blank" rel="noopener">
+        <div class="avatar">${pr.user.login.slice(0,2).toUpperCase()}</div>
+        <div class="item-main">
+          <div class="item-title">${esc(pr.title)}</div>
+          <div class="item-meta">${esc(repo)} &middot; #${pr.number} &middot; ${ago(pr.created_at)}</div>
+        </div>
+        <div class="item-right">
+          ${isDraft ? '<span class="badge badge-gray" style="font-size:10px">draft</span>' : ''}
+          <div class="status-dot ${isDraft ? 'dot-draft' : 'dot-open'}"></div>
+        </div>
+      </a>`;
+    }).join('');
+  }
+
+  function renderNotifications() {
+    const body  = document.getElementById('pr-body');
+    const items = prData.notifications;
+    if (!items.length) { body.innerHTML = '<div class="empty">No unread notifications.</div>'; return; }
+    const reasonLabel = { comment: 'comment', review_requested: 'review requested', mention: 'mention', author: 'your PR', assign: 'assigned', ci_activity: 'CI' };
+    body.innerHTML = items.map(n => {
+      const reason = reasonLabel[n.reason] || n.reason;
+      const repo   = n.repository?.full_name || '';
+      const url    = n.subject?.url?.replace('https://api.github.com/repos/', 'https://github.com/').replace('/pulls/', '/pull/') || '#';
+      return `<a class="item" href="${url}" target="_blank" rel="noopener">
+        <div class="avatar" style="font-size:9px">${esc(repo.split('/')[0]?.slice(0,2).toUpperCase()||'?')}</div>
+        <div class="item-main">
+          <div class="item-title">${esc(n.subject?.title || 'Notification')}</div>
+          <div class="item-meta">${esc(repo)} &middot; ${esc(reason)} &middot; ${ago(n.updated_at)}</div>
+        </div>
+        <div class="item-right"><div class="status-dot dot-open"></div></div>
+      </a>`;
+    }).join('');
+  }
+
+  async function loadGH() {
+    const token = document.getElementById('gh-token').value.trim();
+    const user  = document.getElementById('gh-user').value.trim();
+    const body  = document.getElementById('pr-body');
+    if (!token || !user) { body.innerHTML = '<div class="err">GitHub token and username required — add them in Settings.</div>'; setStatus('gh-svc-dot','idle'); return; }
+    body.innerHTML = '<div class="loading-msg">Fetching PRs…</div>';
+    setStatus('gh-svc-dot', 'loading');
+    const h = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    try {
+      const [a, r, s, notifRes] = await Promise.all([
+        ghSearch(`is:pr is:open author:${user}`, h),
+        ghSearch(`is:pr is:open review-requested:${user}`, h),
+        ghSearch(`is:pr is:open assignee:${user}`, h),
+        fetch('https://api.github.com/notifications?participating=true&per_page=30', { headers: h }),
+      ]);
+      prData.authored = a.items; prData.review = r.items; prData.assigned = s.items;
+      if (notifRes.ok) {
+        const all = await notifRes.json();
+        prData.notifications = all.filter(n => n.subject?.type === 'PullRequest');
+        const badge = document.getElementById('notif-badge');
+        const count = prData.notifications.length;
+        badge.textContent = count; badge.style.display = count > 0 ? 'inline' : 'none';
+      }
+      const unique = new Set([...a.items,...r.items,...s.items].map(p => p.id)).size;
+      document.getElementById('pr-count').textContent = unique;
+      setStatus('gh-svc-dot', 'ok');
+      if (a.total === 0 && r.total === 0 && s.total === 0) {
+        body.innerHTML = `<div class="empty">GitHub returned 0 results for @${esc(user)}.<br><span style="font-size:11px">Check: correct username? token has <code>repo</code> scope? SSO authorized?</span></div>`;
+        return;
+      }
+      renderPRs(); maybeSave();
+    } catch(e) { setStatus('gh-svc-dot','err'); body.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  }
+
+  async function ghSearch(q, headers) {
+    const res  = await fetch(`https://api.github.com/search/issues?q=${encodeURIComponent(q)}&per_page=30&sort=updated`, { headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const sso  = res.headers.get('x-github-sso');
+      const hint = res.status === 401 ? ' — token invalid or expired'
+                 : sso ? ` — SSO required: ${sso}`
+                 : res.status === 403 ? ' — token may lack "repo" scope'
+                 : '';
+      throw new Error(`GitHub ${res.status}: ${data.message || res.statusText}${hint}`);
+    }
+    return { items: data.items || [], total: data.total_count || 0 };
+  }
+
+  /* ── CI Status ── */
+  async function loadCI() {
+    const token = document.getElementById('gh-token').value.trim();
+    const repos = document.getElementById('gh-repos').value.trim();
+    const body  = document.getElementById('ci-body');
+    if (!repos) { body.innerHTML = '<div class="empty">Add repos to watch in Settings.</div>'; return; }
+    if (!token) { body.innerHTML = '<div class="err">GitHub token required.</div>'; return; }
+    body.innerHTML = '<div class="loading-msg">Fetching CI status…</div>';
+    setStatus('ci-svc-dot', 'loading');
+    const h = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    const repoList = repos.split(',').map(r => r.trim()).filter(Boolean);
+    try {
+      const results = await Promise.all(repoList.map(async repo => {
+        const res = await fetch(`https://api.github.com/repos/${repo}/actions/runs?per_page=10`, { headers: h });
+        if (!res.ok) return { repo, error: `${res.status}` };
+        const data = await res.json();
+        const byWorkflow = {};
+        for (const run of data.workflow_runs || []) {
+          if (!byWorkflow[run.name]) byWorkflow[run.name] = run;
+        }
+        return { repo, workflows: Object.values(byWorkflow) };
+      }));
+
+      let failCount = 0, totalWorkflows = 0;
+      body.innerHTML = results.map(r => {
+        if (r.error) return `<div class="ci-repo-header">${esc(r.repo)}</div><div class="empty" style="padding:8px 16px;text-align:left;font-size:12px">Error: ${esc(r.error)}</div>`;
+        if (!r.workflows.length) return `<div class="ci-repo-header">${esc(r.repo)}</div><div class="empty" style="padding:8px 16px;text-align:left;font-size:12px">No runs found.</div>`;
+        totalWorkflows += r.workflows.length;
+        return `<div class="ci-repo-header">${esc(r.repo)}</div>` + r.workflows.map(w => {
+          const conclusion = w.status === 'completed' ? w.conclusion : w.status;
+          const label = conclusion === 'success' ? '✓ pass' : conclusion === 'failure' || conclusion === 'timed_out' ? '✗ fail'
+                      : conclusion === 'in_progress' ? '● running' : conclusion === 'queued' || conclusion === 'waiting' ? '◌ queued' : conclusion || 'unknown';
+          const cls = `ci-conclusion ci-${conclusion || 'neutral'}`;
+          if (conclusion === 'failure' || conclusion === 'timed_out') failCount++;
+          const prLabel = w.pull_requests?.length ? `<span class="ci-pr-badge">PR #${w.pull_requests[0].number}</span>` : '';
+          return `<a class="item" href="${w.html_url}" target="_blank" rel="noopener">
+            <div class="item-main">
+              <div class="item-title">${esc(w.name)}${prLabel}</div>
+              <div class="item-meta">${esc(w.head_branch)} &middot; @${esc(w.actor?.login||'?')} &middot; ${ago(w.updated_at)}</div>
+            </div>
+            <div class="item-right"><span class="${cls}">${label}</span></div>
+          </a>`;
+        }).join('');
+      }).join('');
+
+      const badge = document.getElementById('ci-count');
+      badge.textContent = failCount > 0 ? `${failCount} failing` : `${totalWorkflows} passing`;
+      badge.className = failCount > 0 ? 'badge badge-amber' : 'badge badge-blue';
+      setStatus('ci-svc-dot', failCount > 0 ? 'err' : 'ok');
+    } catch(e) { setStatus('ci-svc-dot','err'); body.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  }
+
+  /* ── Service Statuses ── */
+  const STATUS_SERVICES = [
+    {
+      group: 'Developer Tools',
+      services: [
+        { id: 'github',     name: 'GitHub',      color: '#24292e', abbr: 'GH',   type: 'statuspage', url: 'https://www.githubstatus.com/api/v2/summary.json',     link: 'https://www.githubstatus.com' },
+        { id: 'npm',        name: 'npm',          color: '#cb3837', abbr: 'npm',  type: 'statuspage', url: 'https://status.npmjs.org/api/v2/summary.json',         link: 'https://status.npmjs.org' },
+        { id: 'vercel',     name: 'Vercel',       color: '#000000', abbr: '▲',    type: 'statuspage', url: 'https://www.vercel-status.com/api/v2/summary.json',    link: 'https://www.vercel-status.com' },
+      ]
+    },
+    {
+      group: 'Cloud & Network',
+      services: [
+        { id: 'aws',        name: 'AWS',          color: '#FF9900', abbr: 'AWS',  type: 'link',       url: null,                                                    link: 'https://health.aws.amazon.com' },
+        { id: 'cloudflare', name: 'Cloudflare',   color: '#F38020', abbr: 'CF',   type: 'statuspage', url: 'https://www.cloudflarestatus.com/api/v2/summary.json', link: 'https://www.cloudflarestatus.com' },
+      ]
+    },
+    {
+      group: 'Communication',
+      services: [
+        { id: 'slack',      name: 'Slack',        color: '#4A154B', abbr: 'SL',   type: 'slack',      url: 'https://status.slack.com/api/v2.0.0/current',          link: 'https://status.slack.com' },
+        { id: 'microsoft',  name: 'Microsoft 365',color: '#0078D4', abbr: 'M365', type: 'link',       url: null,                                                    link: 'https://status.cloud.microsoft' },
+      ]
+    },
+  ];
+
+  async function loadStatuses() {
+    const container = document.getElementById('status-groups');
+    container.innerHTML = '<div class="loading-msg">Checking service statuses…</div>';
+
+    // Build effective group list: built-ins (minus hidden) + custom services
+    const effectiveGroups = [];
+    const groupMap = {};
+    STATUS_SERVICES.forEach(g => {
+      const visible = g.services.filter(s => !svcPrefs.hidden.includes(s.id));
+      if (visible.length) {
+        const grp = { group: g.group, services: visible };
+        effectiveGroups.push(grp);
+        groupMap[g.group] = grp;
+      }
+    });
+    svcPrefs.custom.forEach(svc => {
+      if (!groupMap[svc.group]) {
+        const grp = { group: svc.group, services: [] };
+        effectiveGroups.push(grp);
+        groupMap[svc.group] = grp;
+      }
+      groupMap[svc.group].services.push(svc);
+    });
+
+    if (!effectiveGroups.length) {
+      container.innerHTML = '<div class="empty">No services enabled. Toggle services on in Settings.</div>';
+      return;
+    }
+
+    const fetchService = async (svc) => {
+      if (svc.type === 'link') return { ...svc, status: 'link' };
+      try {
+        const res = await fetch(svc.url, { cache: 'no-cache' });
+        if (!res.ok) return { ...svc, status: 'unknown', text: `HTTP ${res.status}` };
+        const data = await res.json();
+        if (svc.type === 'statuspage') {
+          const ind = data.status?.indicator || 'none';
+          const desc = data.status?.description || 'Unknown';
+          return { ...svc, status: ind === 'none' ? 'ok' : ind === 'minor' ? 'warn' : 'err', text: desc };
+        }
+        if (svc.type === 'slack') {
+          const s = data.status;
+          return { ...svc, status: s === 'ok' ? 'ok' : s === 'active' ? 'err' : 'warn', text: s === 'ok' ? 'All Systems Operational' : s === 'active' ? 'Active Incident' : 'Scheduled Maintenance' };
+        }
+      } catch(e) {
+        // CORS or network error — fall back to link-only
+        return { ...svc, status: 'link', text: '' };
+      }
+    };
+
+    const allServices = effectiveGroups.flatMap(g => g.services);
+    const results = await Promise.all(allServices.map(fetchService));
+    const byId = Object.fromEntries(results.map(r => [r.id, r]));
+
+    container.innerHTML = effectiveGroups.map(group => {
+      const rows = group.services.map(svc => {
+        const r = byId[svc.id];
+        const dotCls = r.status === 'ok' ? 'ind-ok' : r.status === 'warn' ? 'ind-warn' : r.status === 'err' ? 'ind-err' : 'ind-unknown';
+        const indHtml = r.status === 'link'
+          ? `<span class="status-link-btn">Check status page →</span>`
+          : `<span class="status-ind-dot ${dotCls}"></span><span class="status-ind-text">${esc(r.text || '')}</span>`;
+        return `<a class="status-row" href="${esc(svc.link)}" target="_blank" rel="noopener">
+          <div class="status-logo" style="background:${esc(svc.color)}">${esc(svc.abbr)}</div>
+          <span class="status-name">${esc(svc.name)}</span>
+          <div class="status-ind">${indHtml}</div>
+        </a>`;
+      }).join('');
+      return `<div>
+        <div class="status-group-label">${esc(group.group)}</div>
+        <div class="status-table">${rows}</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ── Helpers ── */
+  function loadAll() { loadGH(); loadCI(); }
+
+  function ago(d) {
+    const m = Math.floor((Date.now()-new Date(d))/60000);
+    if (m<60) return m+'m ago'; if (m<1440) return Math.floor(m/60)+'h ago';
+    return Math.floor(m/1440)+'d ago';
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  loadSaved();
+  loadServicePrefs();
+  setTheme(localStorage.getItem('dev-dash-theme') || 'system');
+  if (document.getElementById('gh-token').value) loadAll();
+</script>
+</body>
+</html>

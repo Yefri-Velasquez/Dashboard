@@ -1,0 +1,13 @@
+# Never commit credentials or environment files
+.env
+.env.*
+*.local
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editor noise
+.vscode/
+.idea/
+*.swp
