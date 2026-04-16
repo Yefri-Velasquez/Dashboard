@@ -52,6 +52,16 @@
       min-height: 100vh;
       overflow-x: hidden;
     }
+    body::after {
+      content: '';
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 120px;
+      background: linear-gradient(to bottom, rgba(232,185,49,0.02), transparent);
+      pointer-events: none; z-index: 0;
+    }
+    :root[data-theme="light"] body::after {
+      background: linear-gradient(to bottom, rgba(184,134,11,0.03), transparent);
+    }
 
     /* ── Noise texture overlay ── */
     body::before {
@@ -69,7 +79,8 @@
     .shell { max-width: 1400px; margin: 0 auto; padding: 16px 20px; }
 
     /* ── Header ── */
-    .hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); position: relative; }
+    .hdr::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 60px; height: 2px; background: var(--accent); border-radius: 1px; opacity: 0.7; }
     .hdr-left { display: flex; align-items: baseline; gap: 12px; }
     .hdr h1 { font-family: var(--serif); font-size: 20px; font-weight: 400; letter-spacing: -0.3px; }
     .hdr-status { font-family: var(--mono); font-size: 10px; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
@@ -80,21 +91,27 @@
       font-family: var(--mono); font-size: 10px; letter-spacing: 0.02em;
       padding: 5px 11px; border-radius: 6px; border: 1px solid var(--border);
       background: var(--bg-2); color: var(--text-1); cursor: pointer;
-      display: flex; align-items: center; gap: 5px; transition: all 0.15s;
+      display: flex; align-items: center; gap: 5px; transition: all 0.2s ease;
     }
-    .hdr-btn:hover { border-color: var(--border-hover); color: var(--text-0); }
+    .hdr-btn:hover { border-color: var(--border-hover); color: var(--text-0); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .hdr-btn:active { transform: translateY(0); }
     .hdr-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
     .hdr-btn svg { width: 12px; height: 12px; }
-    .notif-indicator { width: 5px; height: 5px; border-radius: 50%; background: var(--red); display: none; }
+    .notif-indicator { width: 5px; height: 5px; border-radius: 50%; background: var(--red); display: none; animation: notifPulse 1.5s ease-in-out infinite; }
+    @keyframes notifPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.4); } 50% { box-shadow: 0 0 0 4px rgba(248,113,113,0); } }
 
     /* ── Summary strip ── */
     .summary { display: flex; gap: 24px; margin-bottom: 18px; padding: 0 2px; }
-    .stat { display: flex; align-items: baseline; gap: 6px; }
-    .stat-val { font-family: var(--serif); font-size: 28px; line-height: 1; }
+    .stat { display: flex; align-items: baseline; gap: 6px; transition: transform 0.2s ease; }
+    .stat:hover { transform: translateY(-2px); }
+    .stat-val { font-family: var(--serif); font-size: 28px; line-height: 1; transition: text-shadow 0.3s ease; }
     .stat-label { font-family: var(--mono); font-size: 10px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; }
     .stat-blue .stat-val { color: var(--blue); }
+    .stat-blue:hover .stat-val { text-shadow: 0 0 20px rgba(96,165,250,0.3); }
     .stat-amber .stat-val { color: var(--orange); }
+    .stat-amber:hover .stat-val { text-shadow: 0 0 20px rgba(251,146,60,0.3); }
     .stat-green .stat-val { color: var(--green); }
+    .stat-green:hover .stat-val { text-shadow: 0 0 20px rgba(74,222,128,0.3); }
 
     /* ── Layout presets ── */
     .layout-bar {
@@ -160,11 +177,11 @@
       border-radius: var(--radius);
       display: flex; flex-direction: column;
       overflow: hidden;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      animation: panelIn 0.35s ease both;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+      animation: panelIn 0.45s cubic-bezier(0.16,1,0.3,1) both;
     }
-    @keyframes panelIn { from { opacity: 0; transform: translateY(10px); } }
-    .panel:hover { border-color: var(--border-hover); }
+    @keyframes panelIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .panel:hover { border-color: var(--border-hover); box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px var(--border-hover); }
     .panel-prs { grid-area: prs; }
     .panel-branches { grid-area: branches; }
     .panel-activity { grid-area: activity; }
@@ -187,14 +204,16 @@
     }
     .p-refresh:hover { color: var(--text-0); }
 
-    .tab-row { display: flex; gap: 1px; padding: 6px 14px 0; flex-shrink: 0; }
+    .tab-row { display: flex; gap: 2px; padding: 6px 14px 0; flex-shrink: 0; }
     .tab {
-      font-family: var(--mono); font-size: 10px; padding: 3px 9px;
+      font-family: var(--mono); font-size: 10px; padding: 4px 10px;
       border-radius: 4px; border: none; background: none;
-      color: var(--text-2); cursor: pointer; transition: all 0.15s;
+      color: var(--text-2); cursor: pointer; transition: all 0.2s ease;
+      position: relative;
     }
-    .tab:hover { color: var(--text-1); }
+    .tab:hover { color: var(--text-1); background: rgba(255,255,255,0.03); }
     .tab.active { background: var(--bg-3); color: var(--text-0); }
+    .tab.active::after { content: ''; position: absolute; bottom: -1px; left: 25%; right: 25%; height: 1px; background: var(--accent); border-radius: 1px; opacity: 0.5; }
 
     .p-body {
       flex: 1; overflow-y: auto; min-height: 0;
@@ -212,11 +231,20 @@
     .pr-item {
       display: flex; align-items: flex-start; gap: 10px;
       padding: 10px 14px; border-bottom: 1px solid var(--border);
-      text-decoration: none; color: inherit; transition: background 0.1s;
+      text-decoration: none; color: inherit; transition: background 0.15s ease, border-left-color 0.15s ease;
       position: relative;
+      border-left: 2px solid transparent;
+      animation: itemSlide 0.3s cubic-bezier(0.16,1,0.3,1) both;
     }
+    .pr-item:nth-child(1) { animation-delay: 0.02s; }
+    .pr-item:nth-child(2) { animation-delay: 0.04s; }
+    .pr-item:nth-child(3) { animation-delay: 0.06s; }
+    .pr-item:nth-child(4) { animation-delay: 0.08s; }
+    .pr-item:nth-child(5) { animation-delay: 0.10s; }
+    .pr-item:nth-child(n+6) { animation-delay: 0.12s; }
+    @keyframes itemSlide { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
     .pr-item:last-child { border-bottom: none; }
-    .pr-item:hover { background: var(--bg-2); }
+    .pr-item:hover { background: var(--bg-2); border-left-color: var(--accent); }
     .pr-item:hover .pr-close { opacity: 1; }
     .pr-avatar {
       width: 22px; height: 22px; border-radius: 5px;
@@ -255,15 +283,32 @@
     }
     .pr-close:hover { background: var(--red); color: var(--bg-0); }
     .pr-close.confirming { opacity: 1; background: var(--red); color: var(--bg-0); }
+    .pr-sub {
+      font-family: var(--mono); font-size: 9px; padding: 2px 7px;
+      border-radius: 4px; border: 1px solid var(--accent);
+      background: transparent; color: var(--accent);
+      cursor: pointer; opacity: 0; transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .pr-item:hover .pr-sub { opacity: 1; }
+    .pr-sub:hover { background: var(--accent); color: var(--bg-0); }
+    .pr-sub.subscribed { opacity: 1; background: var(--accent); color: var(--bg-0); border-color: var(--accent); }
+    .pr-sub.subscribed:hover { background: transparent; color: var(--accent); }
 
     /* ── Branch items ── */
     .br-item {
       display: flex; align-items: center; gap: 10px;
       padding: 8px 14px; border-bottom: 1px solid var(--border);
-      text-decoration: none; color: inherit; transition: background 0.1s;
+      text-decoration: none; color: inherit; transition: background 0.15s ease, border-left-color 0.15s ease;
+      border-left: 2px solid transparent;
+      animation: itemSlide 0.3s cubic-bezier(0.16,1,0.3,1) both;
     }
+    .br-item:nth-child(1) { animation-delay: 0.02s; }
+    .br-item:nth-child(2) { animation-delay: 0.04s; }
+    .br-item:nth-child(3) { animation-delay: 0.06s; }
+    .br-item:nth-child(n+4) { animation-delay: 0.08s; }
     .br-item:last-child { border-bottom: none; }
-    .br-item:hover { background: var(--bg-2); }
+    .br-item:hover { background: var(--bg-2); border-left-color: var(--green); }
     .br-icon { color: var(--text-2); flex-shrink: 0; }
     .br-name { font-family: var(--mono); font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .br-meta { font-family: var(--mono); font-size: 10px; color: var(--text-2); margin-top: 1px; }
@@ -278,10 +323,16 @@
     .act-item {
       display: flex; align-items: flex-start; gap: 10px;
       padding: 8px 14px; border-bottom: 1px solid var(--border);
-      text-decoration: none; color: inherit; transition: background 0.1s;
+      text-decoration: none; color: inherit; transition: background 0.15s ease, border-left-color 0.15s ease;
+      border-left: 2px solid transparent;
+      animation: itemSlide 0.3s cubic-bezier(0.16,1,0.3,1) both;
     }
+    .act-item:nth-child(1) { animation-delay: 0.02s; }
+    .act-item:nth-child(2) { animation-delay: 0.04s; }
+    .act-item:nth-child(3) { animation-delay: 0.06s; }
+    .act-item:nth-child(n+4) { animation-delay: 0.08s; }
     .act-item:last-child { border-bottom: none; }
-    .act-item:hover { background: var(--bg-2); }
+    .act-item:hover { background: var(--bg-2); border-left-color: var(--blue); }
     .act-item.unread { background: var(--bg-2); }
     .act-dot {
       width: 22px; height: 22px; border-radius: 5px;
@@ -295,14 +346,37 @@
 
     /* ── Empty / error ── */
     .empty {
-      padding: 30px 14px; text-align: center;
+      padding: 36px 14px; text-align: center;
       font-family: var(--mono); font-size: 11px; color: var(--text-2);
+      line-height: 1.6; letter-spacing: 0.01em;
+    }
+    .empty::before {
+      content: ''; display: block; width: 28px; height: 1px;
+      background: var(--border-hover); margin: 0 auto 10px; opacity: 0.5;
     }
     .err-msg {
-      margin: 6px; padding: 8px 10px; border-radius: 5px;
+      margin: 6px; padding: 10px 12px; border-radius: 5px;
       font-family: var(--mono); font-size: 10px;
       background: var(--red-dim); color: var(--red); line-height: 1.4;
+      border-left: 2px solid var(--red);
     }
+
+    /* ── Skeleton loading ── */
+    .skeleton {
+      padding: 10px 14px; display: flex; align-items: flex-start; gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .skeleton-avatar { width: 22px; height: 22px; border-radius: 5px; background: var(--bg-3); animation: shimmer 1.5s ease-in-out infinite; }
+    .skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .skeleton-line {
+      height: 10px; border-radius: 3px; background: var(--bg-3);
+      animation: shimmer 1.5s ease-in-out infinite;
+    }
+    .skeleton-line:nth-child(1) { width: 70%; }
+    .skeleton-line:nth-child(2) { width: 45%; opacity: 0.6; }
+    .skeleton:nth-child(2) .skeleton-line { animation-delay: 0.15s; }
+    .skeleton:nth-child(3) .skeleton-line { animation-delay: 0.3s; }
+    @keyframes shimmer { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
 
     /* ── Confirm dialog ── */
     .confirm-overlay {
@@ -315,9 +389,10 @@
     .confirm-box {
       background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 20px; max-width: 360px; width: 90%;
-      animation: scaleIn 0.2s ease;
+      animation: scaleIn 0.25s cubic-bezier(0.16,1,0.3,1);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.3), 0 0 0 1px var(--border);
     }
-    @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } }
+    @keyframes scaleIn { from { transform: scale(0.92) translateY(8px); opacity: 0; } }
     .confirm-box h3 { font-family: var(--serif); font-size: 16px; font-weight: 400; margin-bottom: 6px; }
     .confirm-box p { font-size: 12px; color: var(--text-1); margin-bottom: 16px; line-height: 1.5; }
     .confirm-box code { font-family: var(--mono); font-size: 11px; background: var(--bg-3); padding: 1px 5px; border-radius: 3px; }
@@ -325,12 +400,12 @@
     .confirm-btns button {
       font-family: var(--mono); font-size: 11px; padding: 6px 14px;
       border-radius: 5px; border: 1px solid var(--border);
-      cursor: pointer; transition: all 0.15s;
+      cursor: pointer; transition: all 0.2s ease;
     }
     .btn-cancel { background: var(--bg-2); color: var(--text-1); }
-    .btn-cancel:hover { background: var(--bg-3); }
+    .btn-cancel:hover { background: var(--bg-3); transform: translateY(-1px); }
     .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
-    .btn-danger:hover { opacity: 0.9; }
+    .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(248,113,113,0.25); }
 
     /* ── Settings ── */
     .settings-overlay {
@@ -342,7 +417,8 @@
     .settings-box {
       background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 24px; max-width: 520px; width: 95%; margin-bottom: 40px;
-      animation: scaleIn 0.2s ease;
+      animation: scaleIn 0.25s cubic-bezier(0.16,1,0.3,1);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.3), 0 0 0 1px var(--border);
     }
     .s-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
     .s-header h2 { font-family: var(--serif); font-size: 18px; font-weight: 400; }
@@ -368,9 +444,9 @@
       border-radius: 5px; border: 1px solid var(--border);
       background: var(--bg-2); color: var(--text-0); cursor: pointer; transition: all 0.15s;
     }
-    .s-btn:hover { background: var(--bg-3); }
+    .s-btn:hover { background: var(--bg-3); transform: translateY(-1px); }
     .s-btn.primary { background: var(--accent); color: var(--bg-0); border-color: var(--accent); }
-    .s-btn.primary:hover { opacity: 0.9; }
+    .s-btn.primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(232,185,49,0.25); }
     .s-saved { font-family: var(--mono); font-size: 10px; color: var(--green); display: none; align-self: center; }
     .s-test { margin-top: 8px; display: flex; align-items: center; gap: 6px; }
     .s-test button {
@@ -668,6 +744,7 @@
   // ── State ──
   var prData = { authored: [], review: [], assigned: [] };
   var prChecks = {};
+  var prSubs = {};
   var currentPRTab = 'authored';
   var brData = { active: [], stale: [], all: [] };
   var currentBrTab = 'active';
@@ -678,6 +755,12 @@
   var layoutConfig = { layout: 'focus', visible: { prs: true, branches: true, activity: true } };
 
   // ── Helpers ──
+  function skeletonHTML(n) {
+    var s = '';
+    for (var i = 0; i < n; i++) s += '<div class="skeleton"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>';
+    return s;
+  }
+
   function ago(d) {
     var m = Math.floor((Date.now() - new Date(d)) / 60000);
     if (m < 1) return 'now';
@@ -866,6 +949,7 @@
         '<div class="pr-right">' +
         (pr.draft ? '<span class="pr-draft">draft</span>' : '') +
         '<span class="pr-time">' + ago(pr.created_at) + '</span>' +
+        '<button class="pr-sub' + (prSubs[pr.id] ? ' subscribed' : '') + '" onclick="toggleSub(' + pr.id + ',' + pr.number + ',\'' + esc(repo) + '\')">' + (prSubs[pr.id] ? 'Watching' : 'Watch') + '</button>' +
         '<button class="pr-close" onclick="confirmClose(' + pr.number + ',\'' + esc(repo) + '\',\'' + esc(pr.title.replace(/'/g, '')) + '\')">Close</button>' +
         '</div></div>';
     }).join(''));
@@ -874,7 +958,7 @@
   async function loadGH() {
     var token = $('gh-token').value.trim(), user = $('gh-user').value.trim(), body = $('pr-body');
     if (!token || !user) { html(body, '<div class="empty">Configure GitHub in settings</div>'); return; }
-    html(body, '<div class="empty">Loading...</div>');
+    html(body, skeletonHTML(3));
     var h = ghH(token);
     try {
       var r = await Promise.all([
@@ -902,8 +986,9 @@
       $('sc-prs').textContent = r[0].items.length;
       $('sc-reviews').textContent = r[1].items.length;
       renderPRs(); maybeSave();
-      // Load check statuses in background
+      // Load check statuses and subscription status in background
       loadPRChecks(r[0].items, h);
+      loadPRSubs([].concat(r[0].items, r[1].items, r[2].items), h);
     } catch(e) { html(body, '<div class="err-msg">' + esc(e.message) + '</div>'); }
     lastRefresh = Date.now();
     var now = new Date();
@@ -937,6 +1022,60 @@
         // Notify on failures
         var prefs = getNotifPrefs();
         if (failed > 0 && prefs.merges !== false) sendNotif('Checks failing: ' + pr.title, repo, 'chk-' + pr.id);
+      } catch(e) {}
+    }
+    renderPRs();
+  }
+
+  // ── Watch/Subscribe PR ──
+  async function toggleSub(prId, prNum, repo) {
+    var token = $('gh-token').value.trim();
+    if (!token) return;
+    var h = ghH(token);
+    var isSubbed = prSubs[prId];
+    try {
+      // Get the notification thread for this PR
+      var threadRes = await fetch('https://api.github.com/notifications?participating=false&per_page=100', { headers: h });
+      if (!threadRes.ok) {
+        // Fallback: subscribe to the repo-level issue/PR thread
+        var subUrl = 'https://api.github.com/repos/' + repo + '/issues/' + prNum + '/subscription';
+        if (isSubbed) {
+          await fetch(subUrl, { method: 'DELETE', headers: h });
+          delete prSubs[prId];
+        } else {
+          var r = await fetch(subUrl, { method: 'PUT', headers: h, body: JSON.stringify({ subscribed: true, ignored: false }) });
+          if (r.ok) prSubs[prId] = true;
+        }
+        renderPRs();
+        return;
+      }
+      // Direct issue subscription API
+      var subUrl = 'https://api.github.com/repos/' + repo + '/issues/' + prNum + '/subscription';
+      if (isSubbed) {
+        await fetch(subUrl, { method: 'DELETE', headers: h });
+        delete prSubs[prId];
+      } else {
+        var r = await fetch(subUrl, { method: 'PUT', headers: h, body: JSON.stringify({ subscribed: true, ignored: false }) });
+        if (r.ok) prSubs[prId] = true;
+      }
+    } catch(e) {
+      // Optimistic toggle
+      if (isSubbed) delete prSubs[prId]; else prSubs[prId] = true;
+    }
+    renderPRs();
+  }
+
+  // Load subscription status for PRs
+  async function loadPRSubs(prs, h) {
+    for (var i = 0; i < prs.length; i++) {
+      var pr = prs[i];
+      var repo = pr.repository_url.replace('https://api.github.com/repos/', '');
+      try {
+        var r = await fetch('https://api.github.com/repos/' + repo + '/issues/' + pr.number + '/subscription', { headers: h });
+        if (r.ok) {
+          var data = await r.json();
+          if (data.subscribed) prSubs[pr.id] = true;
+        }
       } catch(e) {}
     }
     renderPRs();
@@ -992,7 +1131,7 @@
   async function loadBranches() {
     var token = $('gh-token').value.trim(), user = $('gh-user').value.trim(), repos = $('gh-repos').value.trim(), body = $('br-body');
     if (!token || !user || !repos) { html(body, '<div class="empty">Configure repos in settings</div>'); return; }
-    html(body, '<div class="empty">Loading...</div>');
+    html(body, skeletonHTML(3));
     var h = ghH(token), repoList = repos.split(',').map(function(r) { return r.trim(); }).filter(Boolean);
     var cutoff = new Date(Date.now() - 7 * 86400000);
     try {
@@ -1029,7 +1168,7 @@
   async function loadActivity() {
     var token = $('gh-token').value.trim(), body = $('act-body');
     if (!token) { html(body, '<div class="empty">Configure GitHub in settings</div>'); return; }
-    html(body, '<div class="empty">Loading...</div>');
+    html(body, skeletonHTML(3));
     try {
       var res = await fetch('https://api.github.com/notifications?all=true&per_page=30', { headers: ghH(token) });
       if (!res.ok) throw new Error('HTTP ' + res.status);
