@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com;
-             connect-src https://api.github.com;
+             connect-src https://api.github.com 'self';
              font-src https://fonts.gstatic.com;
-             img-src https://avatars.githubusercontent.com https://*.githubusercontent.com data:;
+             img-src https://avatars.githubusercontent.com https://*.githubusercontent.com https://github.githubassets.com data:;
              frame-ancestors 'none';">
   <title>GH-Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -127,6 +127,10 @@
     .attn-warn { background: var(--orange-dim); color: var(--orange); }
     .attn-ready { background: var(--green-dim); color: var(--green); }
     .attn-info { background: var(--blue-dim); color: var(--blue); }
+    .attn-streak { background: var(--orange-dim); color: var(--orange); }
+    .attn-stat { background: var(--purple-dim); color: var(--purple); }
+    .attn-accent { background: var(--accent-dim); color: var(--accent); }
+    .attn-divider { width: 1px; height: 14px; background: var(--border); margin: 0 2px; }
     .attn-count { font-weight: 600; }
 
     .commit-mini {
@@ -134,6 +138,20 @@
       background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius);
       display: flex; flex-direction: column; gap: 4px;
     }
+    .achievements {
+      padding: 6px 10px;
+      background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius);
+      display: flex; flex-direction: column; gap: 6px; min-width: 0;
+    }
+    .ach-list { display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+    .ach-item {
+      display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+      padding: 2px 6px 2px 2px; border: 1px solid var(--border); border-radius: 16px;
+      background: var(--bg-2);
+    }
+    .ach-item img { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; }
+    .ach-name { font-family: var(--mono); font-size: 9px; color: var(--text-1); white-space: nowrap; }
+    .ach-tier { font-family: var(--mono); font-size: 8px; color: var(--accent); font-weight: 600; }
     .commit-header { display: flex; align-items: center; justify-content: space-between; }
     .commit-label { font-family: var(--mono); font-size: 9px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; }
     .commit-stats { display: flex; gap: 10px; font-family: var(--mono); font-size: 9px; }
@@ -152,9 +170,9 @@
     .grid {
       display: grid;
       gap: var(--panel-gap);
-      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-columns: 2fr 1fr;
       grid-template-rows: 1fr 1fr;
-      grid-template-areas: "prs branches mergeq" "prs notifs notifs";
+      grid-template-areas: "prs mergeq" "prs notifs";
       height: calc(100vh - 100px);
       min-height: 350px;
     }
@@ -163,7 +181,7 @@
         height: auto !important;
         grid-template-columns: 1fr !important;
         grid-template-rows: auto !important;
-        grid-template-areas: "prs" "branches" "mergeq" "notifs" !important;
+        grid-template-areas: "prs" "mergeq" "notifs" !important;
       }
     }
 
@@ -422,6 +440,7 @@
     @keyframes shimmer { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
 
     /* ── Confirm dialog ── */
+    /* ── Confirm dialog ── */
     .confirm-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.6);
       display: none; align-items: center; justify-content: center; z-index: 100;
@@ -436,6 +455,7 @@
       box-shadow: 0 16px 48px rgba(0,0,0,0.3), 0 0 0 1px var(--border);
     }
     @keyframes scaleIn { from { transform: scale(0.92) translateY(8px); opacity: 0; } }
+    @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } }
     .confirm-box h3 { font-family: var(--serif); font-size: 16px; font-weight: 400; margin-bottom: 6px; }
     .confirm-box p { font-size: 12px; color: var(--text-1); margin-bottom: 16px; line-height: 1.5; }
     .confirm-box code { font-family: var(--mono); font-size: 11px; background: var(--bg-3); padding: 1px 5px; border-radius: 3px; }
@@ -604,25 +624,31 @@
   <header class="hdr">
     <div class="hdr-left">
       <h1>GH-Dashboard</h1>
+    </div>
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px">
+      <img id="user-avatar" class="user-avatar" src="" alt="" style="display:none" />
+      <span id="user-name" class="user-name" style="display:none"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-left:auto">
       <div class="hdr-status" id="hdr-status">
         <span class="pulse"></span>
         <span id="refresh-time">--:--</span>
         <span class="notif-indicator" id="notif-ind"></span>
       </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <img id="user-avatar" class="user-avatar" src="" alt="" style="display:none" />
-      <span id="user-name" class="user-name" style="display:none"></span>
-    </div>
     <button class="settings-cog" onclick="openSettings()" title="Settings" aria-label="Settings">
       <svg viewBox="0 0 20 20" fill="none"><path d="M8.325 2.317a1.5 1.5 0 0 1 3.35 0l.1.65a1.2 1.2 0 0 0 1.706.876l.574-.328a1.5 1.5 0 0 1 1.676 2.488l-.474.528a1.2 1.2 0 0 0 .282 1.907l.575.327a1.5 1.5 0 0 1-.001 2.671l-.574.328a1.2 1.2 0 0 0-.282 1.907l.474.528a1.5 1.5 0 0 1-1.676 2.488l-.574-.328a1.2 1.2 0 0 0-1.706.876l-.1.65a1.5 1.5 0 0 1-3.35 0l-.1-.65a1.2 1.2 0 0 0-1.706-.876l-.574.328a1.5 1.5 0 0 1-1.676-2.488l.474-.528a1.2 1.2 0 0 0-.282-1.907l-.575-.328a1.5 1.5 0 0 1 .001-2.671l.574-.327a1.2 1.2 0 0 0 .282-1.907l-.474-.528a1.5 1.5 0 0 1 1.676-2.488l.574.328a1.2 1.2 0 0 0 1.706-.876l.1-.65Z" stroke="currentColor" stroke-width="1.3"/><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.3"/></svg>
     </button>
+    </div>
   </header>
 
-  <!-- Top row: attention chips + commit heatmap -->
+  <!-- Top row: attention chips + achievements + commit heatmap -->
   <div class="top-row">
     <div class="attention-strip" id="attention-strip">
       <span style="font-family:var(--mono);font-size:9px;color:var(--text-2)">Loading...</span>
+    </div>
+    <div class="achievements" id="achievements" style="display:none">
+      <span class="commit-label">Achievements</span>
+      <div class="ach-list" id="ach-list"></div>
     </div>
     <div class="commit-mini" id="commit-mini">
       <div class="commit-header">
@@ -656,23 +682,6 @@
         <button class="tab" onclick="setPRTab('assigned',this)">assigned</button>
       </div>
       <div class="p-body" id="pr-body"><div class="empty">Configure GitHub in settings<br><button onclick="openSettings()" style="margin-top:8px;font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);cursor:pointer">Set up now</button></div></div>
-    </div>
-
-    <!-- Branches -->
-    <div class="panel panel-branches" id="panel-branches">
-      <div class="p-head">
-        <div class="p-title">Branches</div>
-        <div class="p-actions">
-          <span class="p-badge" id="br-badge" style="background:var(--green-dim);color:var(--green)">&mdash;</span>
-          <button class="p-refresh" onclick="loadBranches()" aria-label="Refresh branches">&#8635;</button>
-        </div>
-      </div>
-      <div class="tab-row">
-        <button class="tab active" onclick="setBrTab('active',this)">active</button>
-        <button class="tab" onclick="setBrTab('stale',this)">stale</button>
-        <button class="tab" onclick="setBrTab('all',this)">all</button>
-      </div>
-      <div class="p-body" id="br-body"><div class="empty">Configure repos in settings<br><button onclick="openSettings()" style="margin-top:8px;font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);cursor:pointer">Set up now</button></div></div>
     </div>
 
     <!-- Merge Queue -->
@@ -721,7 +730,7 @@
 
     <div class="s-section">
       <div class="s-label">GitHub</div>
-      <div class="s-desc">Token needs <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">repo</code> + <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">notifications</code> scopes. Your token stays in your browser only. <a href="https://github.com/settings/tokens/new?scopes=repo,notifications&description=GH-Dashboard" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">Create token</a></div>
+      <div class="s-desc">Use a <strong>fine-grained, read-only</strong> token scoped to only the repos you watch. Required permissions: <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Contents: Read</code>, <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Pull requests: Read</code>, <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Issues: Read</code>, <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Metadata: Read</code>, and account <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Notifications: Read</code>. The dashboard never writes — a leaked read-only token can&rsquo;t close PRs, push code, or modify notifications. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">Create fine-grained token</a></div>
       <div class="s-fields">
         <div class="s-row">
           <div class="s-field"><label>Token</label><input id="gh-token" type="password" placeholder="ghp_..." /></div>
@@ -766,6 +775,16 @@
           <label class="s-toggle"><input type="checkbox" id="n-comments" checked /><span class="s-toggle-track"></span>Comments</label>
           <label class="s-toggle"><input type="checkbox" id="n-reviews" checked /><span class="s-toggle-track"></span>Reviews</label>
           <label class="s-toggle"><input type="checkbox" id="n-merges" checked /><span class="s-toggle-track"></span>Merge status</label>
+        </div>
+      </div>
+      <div id="notif-perm-row" style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-2);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text-1)">
+          Desktop notifications: <span id="notif-perm-status" style="font-weight:600">unknown</span>
+          <div id="notif-perm-help" style="font-size:10px;color:var(--text-2);margin-top:3px;line-height:1.4;display:none"></div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button type="button" id="notif-perm-enable" onclick="enableDesktopNotifs()" style="font-family:var(--mono);font-size:10px;padding:5px 10px;border-radius:5px;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);cursor:pointer">Enable</button>
+          <button type="button" onclick="testDesktopNotif()" style="font-family:var(--mono);font-size:10px;padding:5px 10px;border-radius:5px;border:1px solid var(--border);background:var(--bg-3);color:var(--text-0);cursor:pointer">Test</button>
         </div>
       </div>
     </div>
@@ -827,12 +846,11 @@
   // ── State ──
   var prData = { authored: [], review: [], assigned: [] };
   var prChecks = {};
-  var prSubs = {};
   var prReviews = {};  // keyed by pr.id — { approved: n, changesRequested: bool, reviewers: [{initials, state}] }
+  var prSubs = {};
   var currentPRTab = 'authored';
-  var brData = { active: [], stale: [], all: [] };
-  var currentBrTab = 'active';
   var actData = [];
+  var statsData = null;
   var refreshTimer = null;
   var prevNotifIds = new Set();
   var lastRefresh = 0;
@@ -857,6 +875,27 @@
     return Math.floor((Date.now() - new Date(d)) / 86400000);
   }
 
+  // Format a number of seconds as "Xm" / "Xh Ym" / "<1m"
+  function formatEta(seconds) {
+    if (seconds < 60) return '<1 min';
+    var mins = Math.round(seconds / 60);
+    if (mins < 60) return mins + ' min';
+    var hours = Math.floor(mins / 60);
+    var remMins = mins % 60;
+    return remMins > 0 ? hours + 'h ' + remMins + 'm' : hours + 'h';
+  }
+
+  // Format a duration in ms as "Xs" / "Xm" / "Xh Ym"
+  function formatDuration(ms) {
+    var s = Math.floor(ms / 1000);
+    if (s < 60) return s + 's';
+    var m = Math.floor(s / 60);
+    if (m < 60) return m + 'm';
+    var h = Math.floor(m / 60);
+    var rm = m % 60;
+    return rm > 0 ? h + 'h ' + rm + 'm' : h + 'h';
+  }
+
   function esc(s) { var d = document.createElement('div'); d.appendChild(document.createTextNode(String(s))); return d.innerHTML; }
 
   function showUserAvatar(url, login) {
@@ -872,6 +911,8 @@
   } catch(e) {}
 
   function ghH(t) { return { Authorization: 'Bearer ' + t, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }; }
+  function repoNameFromPR(pr) { return (pr && pr.repository_url || '').replace('https://api.github.com/repos/', ''); }
+  var REQUIRED_APPROVALS = 2;
   function $(id) { return document.getElementById(id); }
   function html(el, c) { if (typeof el === 'string') el = $(el); if (el) el.innerHTML = c; }
 
@@ -967,7 +1008,7 @@
   }
 
   // ── Settings ──
-  function openSettings() { $('settings-overlay').classList.add('show'); loadNotifPrefs(); }
+  function openSettings() { $('settings-overlay').classList.add('show'); loadNotifPrefs(); updateNotifPermUI(); }
   function closeSettings() { $('settings-overlay').classList.remove('show'); }
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') { hideConfirm(); closeSettings(); }
@@ -1012,11 +1053,6 @@
       merges: $('n-merges').checked, interval: parseInt($('refresh-interval').value) || 300
     }));
     syncReposHidden();
-    if (selectedRepos.size === 0 && $('gh-token').value.trim()) {
-      await fetchAllRepos();
-      allRepos.slice(0, 10).forEach(function(r) { selectedRepos.add(r.full_name); });
-      renderRepoTags(); syncReposHidden(); maybeSave();
-    }
     var msg = $('s-saved');
     msg.style.display = 'inline'; setTimeout(function() { msg.style.display = 'none'; }, 2000);
     setupRefresh(); loadAll(); closeSettings();
@@ -1039,23 +1075,154 @@
       if (!user) $('gh-user').value = data.login;
       if (allRepos.length === 0) {
         await fetchAllRepos();
-        if (selectedRepos.size === 0) {
-          allRepos.slice(0, 10).forEach(function(r) { selectedRepos.add(r.full_name); });
-          renderRepoTags(); syncReposHidden();
-        }
       }
     } catch(e) { el.className = 's-test-result err'; el.textContent = e.message; }
   }
 
   // ── Notifications ──
   async function requestNotifPerm() {
-    if (!('Notification' in window)) return;
-    await Notification.requestPermission();
+    if (!('Notification' in window)) return 'unsupported';
+    if (Notification.permission === 'granted') return 'granted';
+    if (Notification.permission === 'denied') return 'denied';
+    var result = await Notification.requestPermission();
+    updateNotifPermUI();
+    return result;
   }
 
-  function sendNotif(title, body, tag) {
-    if (Notification.permission !== 'granted' || document.visibilityState === 'visible') return;
-    try { var n = new Notification(title, { body: body, tag: tag }); n.onclick = function() { window.focus(); n.close(); }; setTimeout(function() { n.close(); }, 8000); } catch(e) {}
+  function updateNotifPermUI() {
+    var statusEl = $('notif-perm-status');
+    var helpEl = $('notif-perm-help');
+    var enableBtn = $('notif-perm-enable');
+    if (!statusEl) return;
+    if (!('Notification' in window)) {
+      statusEl.textContent = 'not supported by this browser';
+      statusEl.style.color = 'var(--red)';
+      if (enableBtn) enableBtn.style.display = 'none';
+      return;
+    }
+    var p = Notification.permission;
+    if (p === 'granted') {
+      statusEl.textContent = 'enabled';
+      statusEl.style.color = 'var(--green)';
+      if (helpEl) helpEl.style.display = 'none';
+      if (enableBtn) enableBtn.style.display = 'none';
+    } else if (p === 'denied') {
+      statusEl.textContent = 'blocked';
+      statusEl.style.color = 'var(--red)';
+      if (helpEl) {
+        helpEl.style.display = 'block';
+        helpEl.textContent = 'You previously blocked notifications for this site. To re-enable, click the lock icon in the address bar → Permissions → Notifications → Allow, then reload.';
+      }
+      if (enableBtn) enableBtn.style.display = 'none';
+    } else {
+      statusEl.textContent = 'not yet enabled';
+      statusEl.style.color = 'var(--orange)';
+      if (helpEl) {
+        helpEl.style.display = 'block';
+        helpEl.textContent = 'Click Enable to allow desktop notifications. On macOS, you may also need to allow your browser in System Settings → Notifications.';
+      }
+      if (enableBtn) enableBtn.style.display = 'inline-block';
+    }
+  }
+
+  async function enableDesktopNotifs() {
+    var result = await requestNotifPerm();
+    updateNotifPermUI();
+    if (result === 'granted') {
+      testDesktopNotif();
+    } else if (result === 'denied') {
+      showInAppToast('Notifications blocked', 'Use the lock icon in the address bar to re-enable, then reload the page.', null, 'error');
+    }
+  }
+
+  async function testDesktopNotif() {
+    var nativeOk = false;
+    // Try the host-side helper first — most reliable on macOS
+    try {
+      var r = await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'GH-Dashboard test', body: 'If you see this in macOS Notification Center, native notifications work ✓', sound: true })
+      });
+      if (r.ok) nativeOk = true;
+    } catch(e) {}
+
+    // Also try the browser notification path
+    var browserOk = false;
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        var n = new Notification('GH-Dashboard test (browser)', { body: 'Browser notification test', tag: 'test-' + Date.now() });
+        n.onclick = function() { window.focus(); n.close(); };
+        setTimeout(function() { n.close(); }, 6000);
+        browserOk = true;
+      } catch(e) {}
+    }
+
+    if (nativeOk && browserOk) {
+      showInAppToast('Both paths working', 'Native macOS + browser notifications both fired.', null, 'success');
+    } else if (nativeOk) {
+      showInAppToast('Native macOS working', 'Native AppleScript path is firing. Browser path inactive.', null, 'success');
+    } else if (browserOk) {
+      showInAppToast('Browser notif sent', 'Native helper not detected. Run: node notify-helper.js', null, 'warn');
+    } else {
+      showInAppToast('No notification path working', 'Native helper not running, browser permission not granted.', null, 'error');
+    }
+  }
+
+  function sendNotif(title, body, tag, opts) {
+    opts = opts || {};
+    // 1. In-app toast — always
+    showInAppToast(title, body, opts.url, opts.kind || 'info');
+
+    // 2. Native macOS notification via the host-side notify-helper (preferred when running locally)
+    fireNativeNotif(title, body).catch(function() {});
+
+    // 3. Browser Notification API — fallback / additional surface
+    if (Notification.permission !== 'granted') return;
+    if (!opts.force && document.visibilityState === 'visible') return;
+    try {
+      var n = new Notification(title, { body: body, tag: tag });
+      n.onclick = function() { window.focus(); if (opts.url) window.open(opts.url, '_blank'); n.close(); };
+      setTimeout(function() { n.close(); }, 8000);
+    } catch(e) {}
+  }
+
+  // POST to the host-side notify-helper. Silently no-ops if helper isn't running.
+  async function fireNativeNotif(title, body) {
+    try {
+      await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title, body: body, sound: true })
+      });
+    } catch(e) { /* helper not running — fine, browser path still works */ }
+  }
+
+  // ── In-app toast (for when the tab is visible) ──
+  function showInAppToast(title, body, url, kind) {
+    var stack = $('toast-stack');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.id = 'toast-stack';
+      stack.style.cssText = 'position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:200;max-width:340px;pointer-events:none';
+      document.body.appendChild(stack);
+    }
+    var toast = document.createElement('div');
+    var color = kind === 'success' ? 'var(--green)' : kind === 'warn' ? 'var(--orange)' : kind === 'error' ? 'var(--red)' : 'var(--accent)';
+    toast.style.cssText = 'background:var(--bg-1);border:1px solid var(--border);border-left:3px solid ' + color + ';border-radius:6px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:auto;cursor:' + (url ? 'pointer' : 'default') + ';animation:slideIn 0.25s ease;font-family:var(--mono);font-size:11px;color:var(--text-0)';
+    var titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-weight:600;margin-bottom:2px;color:' + color;
+    titleEl.textContent = title;
+    toast.appendChild(titleEl);
+    if (body) {
+      var bodyEl = document.createElement('div');
+      bodyEl.style.cssText = 'color:var(--text-1);font-size:10px;line-height:1.4';
+      bodyEl.textContent = body;
+      toast.appendChild(bodyEl);
+    }
+    if (url) toast.onclick = function() { window.open(url, '_blank'); toast.remove(); };
+    stack.appendChild(toast);
+    setTimeout(function() { toast.style.transition = 'opacity 0.3s'; toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 300); }, 7000);
   }
 
   // ── GitHub search ──
@@ -1084,7 +1251,7 @@
     if (rev) {
       if (rev.changesRequested) return { cls: 'changes-requested', badge: 'merge-blocked', label: 'Changes' };
       var approved = rev.approved;
-      var required = 2;
+      var required = REQUIRED_APPROVALS;
       var checksFailing = checks && checks.color === 'red';
       if (checksFailing) return { cls: 'needs-review', badge: 'merge-blocked', label: 'Failing' };
       if (approved >= required) return { cls: 'ready', badge: 'merge-ready', label: 'Ready to merge' };
@@ -1109,16 +1276,10 @@
     var authored = prData.authored || [];
     var reviews = prData.review || [];
 
-    // When on "authored" tab: show authored PRs, then a divider, then review-requested PRs
+    // When on "authored" tab: show authored PRs only
     if (currentPRTab === 'authored') {
-      if (!authored.length && !reviews.length) { html(body, '<div class="empty">No PRs</div>'); return; }
-      var parts = [];
-      parts = parts.concat(authored.map(function(pr) { return renderPRItem(pr); }));
-      if (reviews.length) {
-        parts.push('<div class="section-divider">Waiting for your review</div>');
-        parts = parts.concat(reviews.map(function(pr) { return renderPRItem(pr); }));
-      }
-      html(body, parts.join(''));
+      if (!authored.length) { html(body, '<div class="empty">No PRs</div>'); return; }
+      html(body, authored.map(function(pr) { return renderPRItem(pr); }).join(''));
       return;
     }
 
@@ -1128,10 +1289,10 @@
   }
 
   function renderPRItem(pr) {
-    var repo = pr.repository_url.replace('https://api.github.com/repos/', '');
+    var repo = repoNameFromPR(pr);
     var av = (pr.user && pr.user.avatar_url)
       ? '<img src="' + esc(pr.user.avatar_url) + '&amp;s=36" loading="lazy"/>'
-      : '<div class="pr-avatar-text">' + ((pr.user && pr.user.login) ? pr.user.login.slice(0,2).toUpperCase() : '??') + '</div>';
+      : '<div class="pr-avatar-text">' + ((pr.user && pr.user.login) ? esc(pr.user.login.slice(0,2).toUpperCase()) : '??') + '</div>';
 
     var readiness = computeMergeReadiness(pr);
     var checks = prChecks[pr.id];
@@ -1146,7 +1307,7 @@
     // Approval count pill
     var approvalPill = '';
     if (rev && !pr.draft) {
-      var required = 2;
+      var required = REQUIRED_APPROVALS;
       var pillCls = rev.approved >= required ? 'pill-green' : 'pill-orange';
       approvalPill = '<span class="pill ' + pillCls + '">' + rev.approved + '/' + required + '</span>';
     }
@@ -1178,7 +1339,7 @@
         '<span class="merge-status ' + readiness.badge + '">' + readiness.label + '</span>' +
         timeHtml +
         facesHtml +
-        '<button class="pr-sub' + (prSubs[pr.id] ? ' subscribed' : '') + '" data-id="' + pr.id + '" data-num="' + pr.number + '" data-repo="' + esc(repo) + '">' + (prSubs[pr.id] ? 'Unwatch' : 'Watch') + '</button>' +
+        '<button class="pr-sub' + (prSubs[pr.id] && !prMuted.has(pr.id) ? ' subscribed' : '') + '" data-id="' + pr.id + '" data-num="' + pr.number + '" data-repo="' + esc(repo) + '">' + (prSubs[pr.id] && !prMuted.has(pr.id) ? 'Unwatch' : 'Watch') + '</button>' +
         '<button class="pr-close" data-num="' + pr.number + '" data-repo="' + esc(repo) + '" data-title="' + esc(pr.title) + '">Close</button>' +
       '</div></div>';
   }
@@ -1209,7 +1370,6 @@
         ghSearch('is:pr is:open author:' + user, h),
         ghSearch('is:pr is:open review-requested:' + user, h),
         ghSearch('is:pr is:open assignee:' + user, h),
-        fetch('https://api.github.com/notifications?participating=true&per_page=50', { headers: h }),
         fetch('https://api.github.com/user', { headers: h })
       ]);
 
@@ -1217,34 +1377,20 @@
       prData.review = r[1].items;
       prData.assigned = r[2].items;
 
-      if (r[3].ok) {
-        var notifs = (await r[3].json()).filter(function(n) { return n.subject && n.subject.type === 'PullRequest'; });
-        $('notif-ind').style.display = notifs.length > 0 ? 'inline-block' : 'none';
-        var prefs = getNotifPrefs();
-        notifs.forEach(function(n) {
-          if (prevNotifIds.has(n.id)) return;
-          var title = (n.subject && n.subject.title) || '';
-          var repo = (n.repository && n.repository.full_name) || '';
-          if (n.reason === 'comment' && prefs.comments !== false) sendNotif('Comment: ' + title, repo, 'n-' + n.id);
-          else if ((n.reason === 'review_requested' || n.reason === 'approval') && prefs.reviews !== false) sendNotif('Review: ' + title, repo, 'n-' + n.id);
-        });
-        prevNotifIds = new Set(notifs.map(function(n) { return n.id; }));
-      }
-
-      if (r[4] && r[4].ok) {
-        try { var ud = await r[4].json(); if (ud.avatar_url) showUserAvatar(ud.avatar_url, ud.login); } catch(e) {}
+      if (r[3] && r[3].ok) {
+        try { var ud = await r[3].json(); if (ud.avatar_url) showUserAvatar(ud.avatar_url, ud.login); } catch(e) {}
       }
 
       var allPRItems = [].concat(r[0].items, r[1].items, r[2].items);
       var ids = new Set();
-      allPRItems.forEach(function(p) { ids.add(p.id); prSubs[p.id] = true; });
+      allPRItems.forEach(function(p) { ids.add(p.id); if (!prMuted.has(p.id)) prSubs[p.id] = true; });
       $('pr-badge').textContent = ids.size;
 
       renderPRs();
       maybeSave();
 
-      // Background tasks
-      autoWatchPRs(allPRItems, h).then(function() { loadNotifs(); });
+      // Background tasks. loadNotifs/loadAchievements are driven by loadAll.
+      autoWatchPRs(allPRItems, h);
       loadPRChecks(r[0].items, h);
       loadPRReviews(allPRItems, h);
       loadMergeQueue();
@@ -1262,15 +1408,15 @@
   async function loadPRChecks(prs, h) {
     for (var i = 0; i < prs.length; i++) {
       var pr = prs[i];
-      var repo = pr.repository_url.replace('https://api.github.com/repos/', '');
+      var repo = repoNameFromPR(pr);
       try {
         var prRes = await fetch('https://api.github.com/repos/' + repo + '/pulls/' + pr.number, { headers: h });
-        if (!prRes.ok) continue;
+        if (!prRes.ok) { prChecks[pr.id] = { color: 'gray', label: prRes.status === 401 ? 'auth' : 'error' }; continue; }
         var prDetail = await prRes.json();
         var sha = prDetail.head && prDetail.head.sha;
-        if (!sha) continue;
+        if (!sha) { prChecks[pr.id] = { color: 'gray', label: 'no checks' }; continue; }
         var cRes = await fetch('https://api.github.com/repos/' + repo + '/commits/' + sha + '/check-runs?per_page=100', { headers: h });
-        if (!cRes.ok) continue;
+        if (!cRes.ok) { prChecks[pr.id] = { color: 'gray', label: 'error' }; continue; }
         var cd = await cRes.json();
         var total = (cd.check_runs || []).length;
         var passed = 0, failed = 0;
@@ -1284,8 +1430,8 @@
         else prChecks[pr.id] = { color: 'gray', label: 'no checks' };
 
         var prefs = getNotifPrefs();
-        if (failed > 0 && prefs.merges !== false) sendNotif('Checks failing: ' + pr.title, repo, 'chk-' + pr.id);
-      } catch(e) {}
+        if (failed > 0 && prefs.merges !== false) sendNotif('Checks failing: ' + pr.title, repo, 'chk-' + pr.id, { url: pr.html_url, kind: 'error', force: true });
+      } catch(e) { prChecks[pr.id] = { color: 'gray', label: 'error' }; }
     }
     renderPRs();
     computeAttention();
@@ -1296,7 +1442,7 @@
     for (var i = 0; i < prs.length; i++) {
       var pr = prs[i];
       if (pr.draft) continue;
-      var repo = pr.repository_url.replace('https://api.github.com/repos/', '');
+      var repo = repoNameFromPR(pr);
       try {
         var res = await fetch('https://api.github.com/repos/' + repo + '/pulls/' + pr.number + '/reviews?per_page=100', { headers: h });
         if (!res.ok) continue;
@@ -1363,10 +1509,15 @@
     if (commentCount > 0) chips.push('<div class="attn-chip attn-info"><span class="attn-count">' + commentCount + '</span> comments</div>');
 
     if (chips.length === 0) {
-      strip.innerHTML = '<span style="font-family:var(--mono);font-size:9px;color:var(--text-2)">All clear</span>';
-    } else {
-      strip.innerHTML = chips.join('');
+      chips.push('<span style="font-family:var(--mono);font-size:9px;color:var(--text-2)">All clear</span>');
     }
+
+    if (statsData && statsData.currentStreak > 0) {
+      chips.push('<div class="attn-divider"></div>');
+      chips.push('<div class="attn-chip attn-streak" title="Consecutive days with contributions">&#x1F525; <span class="attn-count">' + statsData.currentStreak + '</span> day streak</div>');
+    }
+
+    strip.innerHTML = chips.join('');
   }
 
   // ── Merge Queue ──
@@ -1376,144 +1527,305 @@
     var body = $('mq-body');
     if (!token || !repos) { html(body, '<div class="empty">No PRs in merge queue</div>'); return; }
 
-    var h = ghH(token);
     var repoList = repos.split(',').map(function(r) { return r.trim(); }).filter(Boolean);
-    var queuedPRs = [];
+    var queued = [];
     var avgCiMinutes = 5;
 
+    // Build a single GraphQL query batching all repos as aliased fields
+    var parts = repoList.map(function(repo, i) {
+      var seg = repo.split('/');
+      if (seg.length !== 2) return null;
+      return 'r' + i + ': repository(owner:"' + seg[0] + '", name:"' + seg[1] + '"){nameWithOwner mergeQueue{entries(first:30){nodes{position state enqueuedAt estimatedTimeToMerge solo jump pullRequest{number title author{login} url headRefName}}}}}';
+    }).filter(Boolean);
+
+    if (!parts.length) { html(body, '<div class="empty">No PRs in merge queue</div>'); return; }
+
+    var query = '{' + parts.join(' ') + '}';
+
     try {
-      await Promise.all(repoList.map(async function(repo) {
-        var res = await fetch('https://api.github.com/repos/' + repo + '/pulls?state=open&per_page=100', { headers: h });
-        if (!res.ok) return;
-        var prs = await res.json();
-        prs.forEach(function(pr) {
-          if (pr.auto_merge) {
-            queuedPRs.push({ title: pr.title, number: pr.number, repo: repo });
-          }
+      var res = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query })
+      });
+      if (!res.ok) { html(body, '<div class="empty">Could not load merge queue</div>'); return; }
+      var data = await res.json();
+      var root = (data && data.data) || {};
+      Object.keys(root).forEach(function(k) {
+        var repo = root[k];
+        if (!repo || !repo.mergeQueue || !repo.mergeQueue.entries) return;
+        repo.mergeQueue.entries.nodes.forEach(function(n) {
+          if (!n || !n.pullRequest) return;
+          queued.push({
+            repo: repo.nameWithOwner,
+            number: n.pullRequest.number,
+            title: n.pullRequest.title,
+            author: n.pullRequest.author && n.pullRequest.author.login,
+            url: n.pullRequest.url,
+            position: n.position,
+            state: n.state,
+            enqueuedAt: n.enqueuedAt,
+            estimatedTimeToMerge: n.estimatedTimeToMerge,
+            solo: n.solo,
+            jump: n.jump
+          });
         });
-      }));
-    } catch(e) {}
+      });
+    } catch(e) {
+      html(body, '<div class="empty">Could not load merge queue</div>');
+      return;
+    }
 
-    $('mq-badge').textContent = queuedPRs.length;
+    queued.sort(function(a, b) { return (a.position || 0) - (b.position || 0); });
 
-    if (!queuedPRs.length) {
+    $('mq-badge').textContent = queued.length;
+
+    if (!queued.length) {
       html(body, '<div class="empty">No PRs in merge queue</div>');
       return;
     }
 
-    var barColors = ['green', 'orange', 'blue'];
-    var statusClasses = ['mq-status-running', 'mq-status-queued', 'mq-status-waiting'];
-    var statusLabels = ['Running checks...', 'Queued — waiting for #1', 'Waiting'];
-    var barWidths = [85, 20, 0];
+    html(body, queued.map(function(pr, idx) {
+      var pos = pr.position || (idx + 1);
+      var stateLower = (pr.state || '').toLowerCase();
+      var statusCls, statusLabel, barWidth, barColor;
 
-    html(body, queuedPRs.map(function(pr, idx) {
-      var pos = idx + 1;
-      var barColor = barColors[Math.min(idx, 2)];
-      var statusCls = statusClasses[Math.min(idx, 2)];
-      var statusLabel = idx === 0 ? statusLabels[0] : idx === 1 ? statusLabels[1] : 'Queued — position #' + pos;
-      var barWidth = idx === 0 ? 85 : idx === 1 ? 20 : 0;
-      var etaMin = pos * avgCiMinutes;
-      var etaLabel = idx === 0 ? 'ETA ~' + (avgCiMinutes - 2) + ' min' : 'ETA ~' + etaMin + ' min';
+      if (stateLower === 'mergeable' || idx === 0) {
+        statusCls = 'mq-status-running';
+        statusLabel = stateLower === 'mergeable' ? 'Ready to merge' : 'Running checks...';
+        barWidth = 85; barColor = 'green';
+      } else if (stateLower === 'unmergeable' || stateLower === 'failed') {
+        statusCls = 'mq-status-waiting';
+        statusLabel = 'Failed';
+        barWidth = 0; barColor = 'orange';
+      } else {
+        statusCls = 'mq-status-queued';
+        statusLabel = pos === 2 ? 'Queued — waiting for #1' : 'Queued — position #' + pos;
+        barWidth = Math.max(5, 30 - (pos - 1) * 5); barColor = 'blue';
+      }
 
-      return '<div class="mq-item">' +
+      // ETA: use GitHub's GraphQL estimate when present. It is often null
+       // (depends on repo settings / GitHub plan), in which case we DO NOT show a
+       // fabricated ETA — instead we show actual elapsed time from enqueuedAt.
+      var etaLabel = '', etaTooltip = '';
+      var elapsedMs = pr.enqueuedAt ? (Date.now() - new Date(pr.enqueuedAt).getTime()) : 0;
+
+      if (typeof pr.estimatedTimeToMerge === 'number' && pr.estimatedTimeToMerge > 0) {
+        var estimateExpiresAt = pr.enqueuedAt ? new Date(pr.enqueuedAt).getTime() + (pr.estimatedTimeToMerge * 1000) : null;
+        var overdueMs = estimateExpiresAt ? (Date.now() - estimateExpiresAt) : 0;
+        if (overdueMs > 60000) {
+          etaLabel = 'overdue +' + formatDuration(overdueMs);
+          etaTooltip = 'GitHub estimated ' + formatEta(pr.estimatedTimeToMerge) + ' but it has been running longer.';
+        } else {
+          var remainingSec = estimateExpiresAt ? Math.max(0, Math.floor((estimateExpiresAt - Date.now()) / 1000)) : pr.estimatedTimeToMerge;
+          etaLabel = '~' + formatEta(remainingSec);
+          etaTooltip = 'ETA from GitHub GraphQL (rolling average). For exact value see the queue page on github.com.';
+        }
+      } else if (elapsedMs > 0) {
+        etaLabel = (idx === 0 ? 'running ' : 'queued ') + formatDuration(elapsedMs);
+        etaTooltip = 'GitHub did not return an ETA estimate for this entry. Showing time-in-queue instead. Click through to github.com for live ETA.';
+      } else {
+        etaLabel = '';
+      }
+
+      var queuedFor = '';
+      var authorLine = pr.author ? ' · @' + esc(pr.author) : '';
+
+      var queueUrl = 'https://github.com/' + pr.repo + '/queue/main';
+      return '<a class="mq-item" href="' + esc(queueUrl) + '" target="_blank" rel="noopener" title="Open queue page on github.com" style="text-decoration:none;color:inherit;display:block">' +
         '<div class="mq-top">' +
-          '<span class="mq-title">#' + pr.number + ' ' + esc(pr.title) + '</span>' +
+          '<span class="mq-title">' + esc(pr.repo) + ' #' + pr.number + ' ' + esc(pr.title) + authorLine + '</span>' +
           '<span class="mq-pos">#' + pos + '</span>' +
         '</div>' +
         '<div class="mq-bar-wrap"><div class="mq-bar ' + barColor + '" style="width:' + barWidth + '%"></div></div>' +
         '<div class="mq-detail">' +
-          '<span class="' + statusCls + '">' + statusLabel + '</span>' +
-          '<span class="mq-eta">' + etaLabel + '</span>' +
+          '<span class="' + statusCls + '">' + statusLabel + queuedFor + '</span>' +
+          (etaLabel ? '<span class="mq-eta" title="' + esc(etaTooltip) + '">' + esc(etaLabel) + '</span>' : '') +
         '</div>' +
-      '</div>';
+      '</a>';
     }).join(''));
   }
 
-  // ── Commit history heatmap ──
+  // ── Commit history heatmap (GraphQL contributionsCollection) ──
   async function loadCommitHistory() {
     var token = $('gh-token').value.trim();
     var user = $('gh-user').value.trim();
     if (!token || !user) return;
 
-    var h = ghH(token);
+    var to = new Date();
+    var from = new Date(to.getTime() - 83 * 86400000);
+    from.setHours(0, 0, 0, 0);
+
+    var query = 'query($login:String!,$from:DateTime!,$to:DateTime!){user(login:$login){followers{totalCount} contributionsCollection(from:$from,to:$to){totalCommitContributions totalIssueContributions totalPullRequestContributions totalPullRequestReviewContributions commitContributionsByRepository(maxRepositories:5){repository{nameWithOwner} contributions{totalCount}} pullRequestContributions(first:100){nodes{pullRequest{merged mergedAt}}} contributionCalendar{weeks{contributionDays{date contributionCount}}}}}}';
+
     var commitsByDay = {};
+    var totalCommits = 0;
     var mergedPRCount = 0;
 
     try {
-      var res = await fetch('https://api.github.com/users/' + encodeURIComponent(user) + '/events?per_page=100', { headers: h });
+      var res = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query, variables: { login: user, from: from.toISOString(), to: to.toISOString() } })
+      });
       if (!res.ok) return;
-      var events = await res.json();
+      var data = await res.json();
+      var cc = data && data.data && data.data.user && data.data.user.contributionsCollection;
+      if (!cc) return;
 
-      var cutoff = new Date(Date.now() - 84 * 86400000); // 12 weeks
-
-      events.forEach(function(ev) {
-        var evDate = new Date(ev.created_at);
-        if (evDate < cutoff) return;
-
-        if (ev.type === 'PushEvent') {
-          var dayKey = evDate.toISOString().slice(0, 10);
-          var commits = (ev.payload && ev.payload.commits) ? ev.payload.commits.length : 1;
-          commitsByDay[dayKey] = (commitsByDay[dayKey] || 0) + commits;
-        } else if (ev.type === 'PullRequestEvent' && ev.payload && ev.payload.action === 'closed' && ev.payload.pull_request && ev.payload.pull_request.merged) {
-          mergedPRCount++;
+      totalCommits = cc.totalCommitContributions || 0;
+      var orderedDays = [];
+      (cc.contributionCalendar.weeks || []).forEach(function(w) {
+        (w.contributionDays || []).forEach(function(d) {
+          commitsByDay[d.date] = d.contributionCount;
+          orderedDays.push(d);
+        });
+      });
+      var prNodes = (cc.pullRequestContributions && cc.pullRequestContributions.nodes) || [];
+      prNodes.forEach(function(n) {
+        if (n.pullRequest && n.pullRequest.merged && n.pullRequest.mergedAt) {
+          var md = new Date(n.pullRequest.mergedAt);
+          if (md >= from && md <= to) mergedPRCount++;
         }
       });
+
+      // Streaks
+      var todayKey = (new Date()).toISOString().slice(0, 10);
+      var current = 0, longest = 0, run = 0;
+      orderedDays.forEach(function(d) {
+        if (d.contributionCount > 0) { run++; if (run > longest) longest = run; }
+        else { run = 0; }
+      });
+      for (var i = orderedDays.length - 1; i >= 0; i--) {
+        var od = orderedDays[i];
+        if (od.date > todayKey) continue;
+        if (od.contributionCount > 0) current++;
+        else if (od.date === todayKey) continue; // today with 0 doesn't break streak yet
+        else break;
+      }
+
+      // Top repo
+      var byRepo = (cc.commitContributionsByRepository || []).slice().sort(function(a, b) {
+        return (b.contributions.totalCount || 0) - (a.contributions.totalCount || 0);
+      });
+      var topRepo = byRepo[0] ? { name: byRepo[0].repository.nameWithOwner, count: byRepo[0].contributions.totalCount } : null;
+
+      statsData = {
+        currentStreak: current,
+        longestStreak: longest,
+        topRepo: topRepo,
+        issuesOpened: cc.totalIssueContributions || 0,
+        prsOpened: cc.totalPullRequestContributions || 0,
+        reviewsGiven: cc.totalPullRequestReviewContributions || 0,
+        followers: (data.data.user.followers && data.data.user.followers.totalCount) || 0
+      };
+      computeAttention();
     } catch(e) { return; }
 
-    // Build 12 weeks × 7 days grid (84 cells, Monday-start columns)
-    var totalCommits = Object.values(commitsByDay).reduce(function(a, b) { return a + b; }, 0);
     $('commit-count').textContent = totalCommits;
     $('merged-count').textContent = mergedPRCount;
 
-    var maxCommits = Math.max.apply(null, Object.values(commitsByDay).concat([1]));
+    var counts = Object.values(commitsByDay).filter(function(c) { return c > 0; });
+    var maxCommits = counts.length ? Math.max.apply(null, counts) : 1;
     var today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    // Build columns: 12 weeks, 7 rows each
-    var columns = [];
-    for (var week = 11; week >= 0; week--) {
-      var col = [];
-      for (var day = 6; day >= 0; day--) {
-        var offset = week * 7 + day;
-        var d = new Date(today.getTime() - offset * 86400000);
-        var key = d.toISOString().slice(0, 10);
-        var count = commitsByDay[key] || 0;
-        var level = 0;
-        if (count > 0) level = count >= maxCommits * 0.75 ? 4 : count >= maxCommits * 0.5 ? 3 : count >= maxCommits * 0.25 ? 2 : 1;
-        col.push(level);
-      }
-      col.reverse();
-      columns.push(col);
+    function dayKey(d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
+    var todayDow = (today.getDay() + 6) % 7;
 
     var heatmapEl = $('heatmap');
     if (!heatmapEl) return;
-    heatmapEl.innerHTML = columns.map(function(col) {
-      return '<div class="heatmap-col">' + col.map(function(level) {
-        return '<div class="heatmap-cell' + (level ? ' l' + level : '') + '"></div>';
-      }).join('') + '</div>';
-    }).join('');
+    while (heatmapEl.firstChild) heatmapEl.removeChild(heatmapEl.firstChild);
+
+    for (var week = 11; week >= 0; week--) {
+      var colEl = document.createElement('div');
+      colEl.className = 'heatmap-col';
+      for (var row = 0; row < 7; row++) {
+        var cellEl = document.createElement('div');
+        cellEl.className = 'heatmap-cell';
+        var offset = week * 7 + (todayDow - row);
+        if (offset < 0) {
+          cellEl.style.visibility = 'hidden';
+        } else {
+          var d = new Date(today.getTime() - offset * 86400000);
+          var count = commitsByDay[dayKey(d)] || 0;
+          if (count > 0) {
+            var level = count >= maxCommits * 0.75 ? 4 : count >= maxCommits * 0.5 ? 3 : count >= maxCommits * 0.25 ? 2 : 1;
+            cellEl.classList.add('l' + level);
+          }
+        }
+        colEl.appendChild(cellEl);
+      }
+      heatmapEl.appendChild(colEl);
+    }
   }
 
   // ── Watch/Subscribe PR ──
+  // Persistent "muted" set — PRs the user explicitly unwatched. autoWatchPRs respects this.
+  function loadMuted() {
+    try { return new Set(JSON.parse(localStorage.getItem('dd-muted') || '[]')); }
+    catch(e) { return new Set(); }
+  }
+  function saveMuted(s) { localStorage.setItem('dd-muted', JSON.stringify(Array.from(s))); }
+  var prMuted = loadMuted();
+
   async function toggleSub(prId, prNum, repo) {
     var token = $('gh-token').value.trim();
     if (!token) return;
     var h = ghH(token);
-    var isSubbed = prSubs[prId];
-    if (isSubbed) delete prSubs[prId]; else prSubs[prId] = true;
+    var isSubbed = !!prSubs[prId] && !prMuted.has(prId);
+
+    // Optimistic UI update
+    if (isSubbed) {
+      delete prSubs[prId];
+      prMuted.add(prId);
+    } else {
+      prSubs[prId] = true;
+      prMuted.delete(prId);
+    }
+    saveMuted(prMuted);
     renderPRs();
+
     try {
       var subUrl = 'https://api.github.com/repos/' + repo + '/issues/' + prNum + '/subscription';
-      if (isSubbed) {
-        await fetch(subUrl, { method: 'DELETE', headers: h });
-      } else {
-        await fetch(subUrl, { method: 'PUT', headers: h, body: JSON.stringify({ subscribed: true, ignored: false }) });
-      }
+      // To genuinely stop notifications on a PR you authored, we must explicitly ignore the thread.
+      // A bare DELETE only removes the explicit override and falls back to "participation" subscription.
+      var body = isSubbed
+        ? { subscribed: false, ignored: true }   // unwatch = mute
+        : { subscribed: true, ignored: false };  // watch
+      var res = await fetch(subUrl, {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, h),
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
     } catch(e) {
-      if (isSubbed) prSubs[prId] = true; else delete prSubs[prId];
+      // Roll back optimistic state
+      if (isSubbed) { prSubs[prId] = true; prMuted.delete(prId); }
+      else { delete prSubs[prId]; prMuted.add(prId); }
+      saveMuted(prMuted);
       renderPRs();
+      showInAppToast('Failed to ' + (isSubbed ? 'unwatch' : 'watch'), e.message, null, 'error');
     }
+  }
+
+  async function autoWatchPRs(prs, h) {
+    var seen = new Set();
+    await Promise.all(prs.map(async function(pr) {
+      if (!pr || seen.has(pr.id)) return;
+      seen.add(pr.id);
+      if (prSubs[pr.id]) return;
+      if (prMuted.has(pr.id)) return; // user explicitly unwatched — respect that
+      var repo = repoNameFromPR(pr);
+      try {
+        var r = await fetch('https://api.github.com/repos/' + repo + '/issues/' + pr.number + '/subscription', {
+          method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, h),
+          body: JSON.stringify({ subscribed: true, ignored: false })
+        });
+        if (r.ok) prSubs[pr.id] = true;
+      } catch(e) {}
+    }));
   }
 
   // ── Close PR ──
@@ -1535,130 +1847,141 @@
         body: JSON.stringify({ state: 'closed' })
       });
       if (!res.ok) { var d = await res.json(); alert('Failed: ' + (d.message || res.status)); }
-      else { loadGH(); }
+      else {
+        var matchClosed = function(pr) {
+          return !(repoNameFromPR(pr) === closePR.repo && pr.number === closePR.num);
+        };
+        prData.authored = (prData.authored || []).filter(matchClosed);
+        prData.review = (prData.review || []).filter(matchClosed);
+        prData.assigned = (prData.assigned || []).filter(matchClosed);
+        renderPRs();
+        setTimeout(loadGH, 5000);
+      }
     } catch(e) { alert('Error: ' + e.message); }
     $('confirm-ok').textContent = 'Close PR';
     hideConfirm();
   }
 
-  // ── Branches ──
-  function setBrTab(tab, el) {
-    currentBrTab = tab;
-    el.closest('.panel').querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-    el.classList.add('active');
-    renderBranches();
-  }
-
-  function renderBranches() {
-    var body = $('br-body'), items = brData[currentBrTab];
-    if (!items || !items.length) { html(body, '<div class="empty">No ' + currentBrTab + ' branches</div>'); return; }
-    html(body, items.map(function(b) {
-      var badge = b.pr
-        ? '<a class="br-pr-badge has-pr" href="' + esc(b.pr.html_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">PR #' + b.pr.number + '</a>'
-        : '<a class="br-pr-badge no-pr" href="https://github.com/' + esc(b.repo) + '/compare/main...' + encodeURIComponent(b.name) + '?expand=1" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none">+ Create PR</a>';
-      var url = 'https://github.com/' + b.repo + '/compare/main...' + encodeURIComponent(b.name);
-      return '<a class="br-item" href="' + esc(url) + '" target="_blank" rel="noopener">' +
-        '<svg class="br-icon" width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M5 3v10M11 3v10M5 8h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>' +
-        '<div style="flex:1;min-width:0"><div class="br-name">' + esc(b.name) + '</div>' +
-        '<div class="br-meta">' + esc(b.repo) + ' &middot; ' + esc(b.sha) + ' &middot; ' + (b.commitDate ? ago(b.commitDate) : '?') + '</div></div>' +
-        '<div style="flex-shrink:0">' + badge + '</div></a>';
-    }).join(''));
-  }
-
-  async function loadBranches() {
-    var token = $('gh-token').value.trim(), user = $('gh-user').value.trim(), repos = $('gh-repos').value.trim(), body = $('br-body');
-    if (!token || !user || !repos) { html(body, '<div class="empty">Configure repos in settings</div>'); return; }
-    html(body, skeletonHTML(3));
-    var h = ghH(token), repoList = repos.split(',').map(function(r) { return r.trim(); }).filter(Boolean);
-    var cutoff = new Date(Date.now() - 7 * 86400000);
-    try {
-      var all = [];
-      await Promise.all(repoList.map(async function(repo) {
-        var bRes = await fetch('https://api.github.com/repos/' + repo + '/branches?per_page=100', { headers: h });
-        if (!bRes.ok) return;
-        var branches = await bRes.json();
-        var pRes = await fetch('https://api.github.com/repos/' + repo + '/pulls?state=open&per_page=100', { headers: h });
-        var prs = pRes.ok ? await pRes.json() : [];
-        var prMap = {};
-        prs.forEach(function(p) { prMap[p.head.ref] = p; });
-        for (var i = 0; i < branches.length; i++) {
-          var br = branches[i];
-          if (br.name === 'main' || br.name === 'master' || br.name === 'develop') continue;
-          var cRes = await fetch(br.commit.url, { headers: h });
-          var c = cRes.ok ? await cRes.json() : null;
-          var author = (c && c.author && c.author.login) || (c && c.commit && c.commit.author && c.commit.author.name) || '?';
-          var cDate = (c && c.commit && c.commit.committer && c.commit.committer.date) || null;
-          var isUser = author.toLowerCase() === user.toLowerCase();
-          var uPR = prMap[br.name];
-          if (!isUser && !(uPR && uPR.user.login.toLowerCase() === user.toLowerCase())) continue;
-          all.push({ repo: repo, name: br.name, sha: br.commit.sha.slice(0,7), commitDate: cDate, pr: prMap[br.name] || null, isStale: cDate ? new Date(cDate) < cutoff : false });
-        }
-      }));
-      all.sort(function(a, b) { return new Date(b.commitDate || 0) - new Date(a.commitDate || 0); });
-      brData.all = all;
-      brData.active = all.filter(function(b) { return !b.isStale; });
-      brData.stale = all.filter(function(b) { return b.isStale; });
-      $('br-badge').textContent = all.length;
-      renderBranches();
-    } catch(e) { html(body, '<div class="err-msg">' + esc(e.message) + '</div>'); }
-  }
-
-  // ── Auto-watch PRs ──
-  async function autoWatchPRs(prs, h) {
-    var allPRs = [];
-    var seen = new Set();
-    prs.forEach(function(pr) {
-      if (!pr || seen.has(pr.id)) return;
-      seen.add(pr.id);
-      allPRs.push(pr);
-    });
-    await Promise.all(allPRs.map(async function(pr) {
-      if (prSubs[pr.id]) return;
-      var repo = pr.repository_url.replace('https://api.github.com/repos/', '');
-      try {
-        var r = await fetch('https://api.github.com/repos/' + repo + '/issues/' + pr.number + '/subscription', {
-          method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, h),
-          body: JSON.stringify({ subscribed: true, ignored: false })
-        });
-        if (r.ok) prSubs[pr.id] = true;
-      } catch(e) {}
-    }));
-  }
-
   // ── Notifications ──
+  var notifEventCache = {};
+
+  function isGitHubApiUrl(u) {
+    return typeof u === 'string' && u.indexOf('https://api.github.com/') === 0;
+  }
+
+  async function classifyNotif(n, h) {
+    var url = (n.subject && n.subject.latest_comment_url) || '';
+    if (!isGitHubApiUrl(url)) return null;
+    if (notifEventCache[url]) return notifEventCache[url];
+    try {
+      var res = await fetch(url, { headers: h });
+      if (!res.ok) return null;
+      var data = await res.json();
+      var info = null;
+      var login = esc((data.user && data.user.login) || 'someone');
+      if (/\/pulls\/\d+\/reviews\/\d+/.test(url)) {
+        var state = (data.state || '').toLowerCase();
+        if (state === 'approved') info = { cls: 'act-review', sym: '&#10003;', label: 'approved by @' + login };
+        else if (state === 'changes_requested') info = { cls: 'act-comment', sym: '&#9888;', label: 'changes requested by @' + login };
+        else if (state === 'commented') info = { cls: 'act-comment', sym: '&#128172;', label: 'review comment by @' + login };
+      } else if (/\/(issues|pulls)\/comments\/\d+/.test(url)) {
+        info = { cls: 'act-comment', sym: '&#128172;', label: 'comment by @' + login };
+      } else if (/\/commits\/[a-f0-9]+/.test(url)) {
+        info = { cls: 'act-other', sym: '&#9881;', label: 'commit pushed' };
+      }
+      if (info) notifEventCache[url] = info;
+      return info;
+    } catch(e) { return null; }
+  }
+
   async function loadNotifs() {
     var token = $('gh-token').value.trim(), body = $('act-body');
     if (!token) { html(body, '<div class="empty">Configure GitHub in settings</div>'); return; }
-    html(body, skeletonHTML(3));
+    if (!actData.length) html(body, skeletonHTML(3));
     var h = ghH(token);
     try {
-      var res = await fetch('https://api.github.com/notifications?participating=true&all=true&per_page=50', { headers: h });
+      var since = new Date(Date.now() - 14 * 86400000).toISOString();
+      var res = await fetch('https://api.github.com/notifications?all=true&per_page=100&since=' + encodeURIComponent(since), { headers: h });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var allNotifs = await res.json();
-      // Show all PR notifications where user is participating (auto-watched)
-      var notifs = allNotifs.filter(function(n) {
-        return n.subject && n.subject.type === 'PullRequest';
-      });
+      var me = ($('gh-user').value || '').trim().toLowerCase();
+      var prCandidates = allNotifs.filter(function(n) { return n.subject && n.subject.type === 'PullRequest'; });
+
+      // Verify PR author == current user before keeping
+      var verified = await Promise.all(prCandidates.map(async function(n) {
+        var url = (n.subject && n.subject.url) || '';
+        if (!isGitHubApiUrl(url)) return null;
+        if (notifEventCache['__author__' + url] !== undefined) {
+          return notifEventCache['__author__' + url] === me ? n : null;
+        }
+        try {
+          var pr = await fetch(url, { headers: h }).then(function(r) { return r.ok ? r.json() : null; });
+          var author = pr && pr.user && pr.user.login ? pr.user.login.toLowerCase() : '';
+          notifEventCache['__author__' + url] = author;
+          return author === me ? n : null;
+        } catch(e) { return null; }
+      }));
+      var notifs = verified.filter(Boolean);
       if (!notifs.length) { html(body, '<div class="empty">No notifications on your PRs</div>'); actData = []; computeAttention(); return; }
+
+      // Enrich notifications with actual review/comment data in parallel
+      var enriched = await Promise.all(notifs.map(function(n) {
+        return classifyNotif(n, h).then(function(info) { return { n: n, info: info }; });
+      }));
+
       actData = notifs;
       $('notif-ind').style.display = notifs.some(function(n) { return n.unread; }) ? 'inline-block' : 'none';
+
+      // Push-notification dispatch — fires only for genuinely new notifications,
+      // and uses the *classified* info so approvals (reason=author) are detected correctly.
+      var prefs = getNotifPrefs();
+      var firstRun = prevNotifIds.size === 0;
+      enriched.forEach(function(item) {
+        var n = item.n, info = item.info;
+        if (firstRun || prevNotifIds.has(n.id)) return;
+        var title = (n.subject && n.subject.title) || '';
+        var repoName = (n.repository && n.repository.full_name) || '';
+        var rawUrl = (n.subject && n.subject.url) || '';
+        var prUrl = rawUrl.replace('https://api.github.com/repos/', 'https://github.com/').replace('/pulls/', '/pull/');
+        var subtitle = repoName + ' · ' + title;
+
+        if (info && /^approved by /.test(info.label)) {
+          sendNotif('PR approved — ' + info.label.replace(/^approved by /, ''), subtitle, 'n-' + n.id, { url: prUrl, kind: 'success', force: true });
+        } else if (info && /^changes requested by /.test(info.label)) {
+          sendNotif('Changes requested — ' + info.label.replace(/^changes requested by /, ''), subtitle, 'n-' + n.id, { url: prUrl, kind: 'warn', force: true });
+        } else if (info && /^review comment by /.test(info.label) && prefs.comments !== false) {
+          sendNotif('Review comment — ' + info.label.replace(/^review comment by /, ''), subtitle, 'n-' + n.id, { url: prUrl, kind: 'info' });
+        } else if (info && /^comment by /.test(info.label) && prefs.comments !== false) {
+          sendNotif('Comment — ' + info.label.replace(/^comment by /, ''), subtitle, 'n-' + n.id, { url: prUrl, kind: 'info' });
+        } else if (n.reason === 'review_requested' && prefs.reviews !== false) {
+          sendNotif('Review requested', subtitle, 'n-' + n.id, { url: prUrl, kind: 'info' });
+        } else if (n.reason === 'mention') {
+          sendNotif('You were mentioned', subtitle, 'n-' + n.id, { url: prUrl, kind: 'warn', force: true });
+        }
+      });
+      prevNotifIds = new Set(notifs.map(function(n) { return n.id; }));
+
       computeAttention();
-      html(body, notifs.map(function(n) {
+
+      html(body, enriched.map(function(item) {
+        var n = item.n, info = item.info;
         var repo = (n.repository && n.repository.full_name) || '';
         var rawUrl = (n.subject && n.subject.url) || '';
         var url = rawUrl.replace('https://api.github.com/repos/', 'https://github.com/').replace('/pulls/', '/pull/');
-        var cls = 'act-other', sym = '&bull;', label = n.reason.replace(/_/g, ' ');
-        if (n.reason === 'comment') { cls = 'act-comment'; sym = '&#128172;'; label = 'new comment'; }
+        var cls = 'act-other', sym = '&bull;', label = esc((n.reason || '').replace(/_/g, ' '));
+        if (info) { cls = info.cls; sym = info.sym; label = info.label; }
+        else if (n.reason === 'comment') { cls = 'act-comment'; sym = '&#128172;'; label = 'new comment'; }
         else if (n.reason === 'review_requested') { cls = 'act-review'; sym = '&#128064;'; label = 'review requested'; }
         else if (n.reason === 'approval') { cls = 'act-review'; sym = '&#10003;'; label = 'approved'; }
         else if (n.reason === 'mention') { cls = 'act-mention'; sym = '@'; label = 'mentioned you'; }
         else if (n.reason === 'state_change') { cls = 'act-review'; sym = '&#8644;'; label = 'status changed'; }
         else if (n.reason === 'ci_activity') { cls = 'act-other'; sym = '&#9881;'; label = 'CI update'; }
+        else if (n.reason === 'author') { cls = 'act-review'; sym = '&#9881;'; label = 'activity on your PR'; }
         return '<a class="act-item' + (n.unread ? ' unread' : '') + '" href="' + esc(url) + '" target="_blank" rel="noopener">' +
           '<div class="act-dot ' + cls + '">' + sym + '</div>' +
           '<div style="flex:1;min-width:0">' +
           '<div style="font-size:10px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc((n.subject && n.subject.title) || 'Notification') + '</div>' +
-          '<div style="font-family:var(--mono);font-size:9px;color:var(--text-2);margin-top:1px">' + esc(repo) + ' &middot; ' + esc(label) + ' &middot; ' + ago(n.updated_at) + '</div>' +
+          '<div style="font-family:var(--mono);font-size:9px;color:var(--text-2);margin-top:1px">' + esc(repo) + ' &middot; ' + label + ' &middot; ' + ago(n.updated_at) + '</div>' +
           '</div>' +
           (n.unread ? '<div class="unread-dot"></div>' : '') + '</a>';
       }).join(''));
@@ -1675,7 +1998,77 @@
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible' && Date.now() - lastRefresh > 60000) loadAll();
   });
-  function loadAll() { loadGH(); loadBranches(); }
+  function loadAll() { loadGH(); loadNotifs(); loadAchievements(); }
+
+  // ── GitHub achievements (scraped from profile HTML via nginx proxy) ──
+  async function loadAchievements() {
+    var user = $('gh-user').value.trim();
+    if (!user) return;
+    var wrap = $('achievements'), list = $('ach-list');
+    if (!wrap || !list) return;
+    try {
+      var res = await fetch('/gh-achievements/' + encodeURIComponent(user), { credentials: 'omit' });
+      if (!res.ok) { wrap.style.display = 'none'; return; }
+      var htmlText = await res.text();
+      var doc = new DOMParser().parseFromString(htmlText, 'text/html');
+
+      var items = [];
+      // Achievements tab markup:
+      // <a href="...?achievement=NAME...">
+      //   <img class="achievement-badge-sidebar" alt="Achievement: NAME" src="..." />
+      //   <span class="achievement-tier-label">xN</span>  (optional)
+      // </a>
+      doc.querySelectorAll('a[href*="achievement="]').forEach(function(a) {
+        var img = a.querySelector('img.achievement-badge-sidebar, img[alt^="Achievement:"]');
+        if (!img) return;
+        var src = img.getAttribute('src') || '';
+        var alt = img.getAttribute('alt') || '';
+        var name = alt.replace(/^Achievement:\s*/, '').trim();
+        if (!name) {
+          var slug = (a.href.match(/achievement=([^&]+)/) || [])[1] || '';
+          name = slug.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+        }
+        var tierEl = a.querySelector('.achievement-tier-label');
+        var tier = tierEl ? tierEl.textContent.trim() : '';
+        if (src.startsWith('/')) src = 'https://github.com' + src;
+        items.push({ name: name, src: src, tier: tier });
+      });
+
+      // de-dupe by name
+      var seen = new Set();
+      items = items.filter(function(it) {
+        var k = it.name.toLowerCase();
+        if (seen.has(k)) return false;
+        seen.add(k); return true;
+      });
+
+      while (list.firstChild) list.removeChild(list.firstChild);
+      if (!items.length) { wrap.style.display = 'none'; return; }
+
+      items.forEach(function(it) {
+        var el = document.createElement('div');
+        el.className = 'ach-item';
+        el.title = it.name + (it.tier ? ' ' + it.tier : '');
+        var img = document.createElement('img');
+        img.src = it.src; img.alt = it.name; img.loading = 'lazy';
+        var nameEl = document.createElement('span');
+        nameEl.className = 'ach-name';
+        nameEl.textContent = it.name;
+        el.appendChild(img);
+        el.appendChild(nameEl);
+        if (it.tier) {
+          var tierEl = document.createElement('span');
+          tierEl.className = 'ach-tier';
+          tierEl.textContent = it.tier;
+          el.appendChild(tierEl);
+        }
+        list.appendChild(el);
+      });
+      wrap.style.display = 'flex';
+    } catch(e) {
+      wrap.style.display = 'none';
+    }
+  }
 
   // ── Repo multi-select ──
   var allRepos = [];
@@ -1781,7 +2174,10 @@
   setTheme(localStorage.getItem('dd-theme') || 'system');
   loadStylePrefs();
   setupRefresh();
-  if ($('gh-token').value) loadAll();
+  if ($('gh-token').value) {
+    requestNotifPerm();
+    loadAll();
+  }
 </script>
 </body>
 </html>

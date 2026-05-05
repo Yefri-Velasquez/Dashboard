@@ -1,89 +1,113 @@
-# Dev Dashboard
+# GH-Dashboard
 
-A personal developer dashboard showing your GitHub PRs, CI status, notifications, and service statuses — hosted on GitHub Pages, zero backend.
+A personal, **read-only** GitHub developer dashboard. Shows your PRs, the merge queue, notifications, contribution heatmap, and achievement badges. Pure static HTML — no backend, no build step, no dependencies.
 
 ## Live
 
-Once deployed: `https://<your-github-username>.github.io/Dashboard`
+`https://<your-github-username>.github.io/Dashboard`
+
+---
+
+## Security model — read this first
+
+This dashboard is intentionally **view-only**. It cannot close PRs, push code, modify notifications, or take any action on your behalf — by design.
+
+### What this means for your token
+
+You should give it a **fine-grained, read-only** Personal Access Token, scoped to only the repositories you want to see. If that token ever leaks, an attacker can read what you can read in those specific repos — and **nothing else**. They cannot:
+
+- Force-push to `main` or any branch
+- Delete repositories
+- Close, reopen, or merge PRs
+- Modify notification subscriptions
+- Touch repos outside the ones you scoped the token to
+
+### Required token permissions
+
+Create one at [github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new):
+
+| Section | Permission | Access |
+|---|---|---|
+| Repository | Contents | Read |
+| Repository | Pull requests | Read |
+| Repository | Issues | Read |
+| Repository | Metadata | Read (mandatory) |
+| Account | Notifications | Read |
+
+Select only the repos you want the dashboard to monitor. **Do not grant any `Write` permissions** — the dashboard does not use them.
+
+### Where the token lives
+
+- **Only in your browser's `localStorage`** — never sent to any backend
+- **Origin-scoped**: only your browser, on your specific dashboard URL, can read it
+- **Never committed**: the token is not in this repo and never will be
+- All API calls go directly from your browser to `api.github.com` over HTTPS
+
+### What this does NOT protect against
+
+To be honest about the limits:
+
+- **XSS in this page itself** would expose the token. The dashboard avoids `eval`, loads no third-party scripts, uses a strict CSP, and `esc()`s user content — but no client-side app is XSS-proof
+- **Malware on your laptop** can read browser memory regardless of where a token lives
+- **A compromised browser extension** with `<all_urls>` permissions can read `localStorage`
+
+For a personal dev tool with a read-only token scoped to your own repos, this threat profile is acceptable. For higher-stakes use, fork it and put a real backend in front (proxy + OAuth Device Flow).
+
+### Want to clear your token?
+
+Click **Settings → Clear saved** to wipe credentials from `localStorage`. Or revoke the token at <https://github.com/settings/personal-access-tokens>.
 
 ---
 
 ## Setup
-
-### 1. Fork or clone this repo
 
 ```bash
 git clone https://github.com/<you>/Dashboard.git
 cd Dashboard
 ```
 
-### 2. Enable GitHub Pages
+### Option A — GitHub Pages (zero infra)
 
-- Go to **Settings → Pages**
-- Source: **Deploy from a branch**
-- Branch: `main` / root (`/`)
-- Save — your site will be live in ~60 seconds
+1. **Settings → Pages → Deploy from a branch → `main` / root**
+2. Visit `https://<you>.github.io/Dashboard`
+3. Click **Settings**, paste your fine-grained read-only PAT, save
 
-### 3. Get a GitHub Personal Access Token
-
-1. Go to [github.com/settings/tokens](https://github.com/settings/tokens?type=beta)
-2. Create a **fine-grained** token with **read-only** access to:
-   - **Pull requests** — to show your PRs
-   - **Actions** — to show CI status
-   - **Metadata** — required by GitHub
-3. Or use a classic token with `repo` + `notifications` scopes
-4. If your org uses SAML SSO, click **Configure SSO** next to the token
-
-### 4. Enter your token in the dashboard
-
-Open the dashboard, click **Settings**, paste your token, and click **Save & Load**.
-
----
-
-## Credential safety
-
-| What | Where | Committed? |
-|---|---|---|
-| GitHub PAT | Browser `localStorage` only (if you tick "Remember") | **Never** |
-| Settings | Browser `localStorage` only | **Never** |
-
-- Your token is stored **entirely in your browser** — it is never sent to any backend server
-- All API calls go directly from your browser to `api.github.com`
-- `localStorage` is origin-scoped: only your browser on your specific GitHub Pages URL can read it
-- Untick "Remember" and click **Clear saved** at any time to wipe credentials
-- Use a **fine-grained token** with minimal read-only scopes for best security
-
----
-
-## Features
-
-- **Pull Requests** — authored, review requested, assigned tabs
-- **Notifications** — unread PR notifications from GitHub
-- **CI Status** — GitHub Actions workflow runs for watched repos
-- **Service Statuses** — monitor GitHub, npm, Vercel, Cloudflare, Slack, AWS, Microsoft 365
-- **Custom Services** — add your own Statuspage-compatible services
-- **Theme** — light, dark, or system preference
-- **Fully client-side** — no server, no build step, no dependencies
-
----
-
-## Local development
-
-No build step needed — just open `index.html`:
-
-```bash
-open index.html
-# or
-npx serve .
-```
-
----
-
-## Docker (optional)
-
-For local Docker hosting:
+### Option B — Local Docker
 
 ```bash
 docker compose up -d
 # → http://localhost:3000
 ```
+
+Local Docker also enables the **achievements badge scrape** (a small nginx proxy that fetches your `?tab=achievements` page server-side, since GitHub's CORS blocks browser fetches). Pages-hosted version skips this.
+
+---
+
+## Features
+
+- **Pull requests** — authored PRs with merge readiness (review state, CI status, draft, conflicts)
+- **Merge queue** — live entries from GitHub's merge queue (per repo) via GraphQL
+- **Notifications** — only events on PRs *you authored* (filtered server-side after fetch)
+- **Contribution heatmap** — last 12 weeks via the GraphQL `contributionsCollection` API (matches your GitHub profile exactly)
+- **Achievements** — your earned GitHub achievement badges (local Docker only)
+- **Streak counter** — current consecutive days with contributions
+
+---
+
+## What the dashboard reads
+
+| Endpoint | Why |
+|---|---|
+| `GET /search/issues` | List your open PRs |
+| `GET /repos/:o/:r/pulls/:n/reviews` | Compute merge readiness |
+| `GET /notifications` | List notifications |
+| `GET /repos/:o/:r/pulls/:n` | Verify PR author = you |
+| `POST /graphql` | Heatmap, merge queue, contribution stats |
+
+All read-only. No `PATCH`, `PUT`, `POST` (other than GraphQL queries), or `DELETE`.
+
+---
+
+## License
+
+MIT.
