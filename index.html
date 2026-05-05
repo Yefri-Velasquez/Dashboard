@@ -46,12 +46,12 @@
       --border-hover: rgba(0,0,0,0.14);
     }
 
+    html, body { height: 100%; }
     body {
       font-family: var(--sans);
       background: var(--bg-0);
       color: var(--text-0);
-      min-height: 100vh;
-      overflow-x: hidden;
+      overflow: hidden;
       font-size: 13px;
     }
     body::after {
@@ -73,7 +73,13 @@
     }
 
     /* ── Shell ── */
-    .shell { max-width: 100%; margin: 0 auto; padding: 8px 12px; }
+    .shell {
+      max-width: 100%; margin: 0 auto; padding: 8px 12px;
+      height: 100vh; display: flex; flex-direction: column;
+    }
+    .shell > .hdr { flex-shrink: 0; }
+    .shell > .top-row { flex-shrink: 0; }
+    .shell > .grid { flex: 1; min-height: 0; }
 
     /* ── Header ── */
     .hdr {
@@ -173,8 +179,7 @@
       grid-template-columns: 2fr 1fr;
       grid-template-rows: 1fr 1fr;
       grid-template-areas: "prs mergeq" "prs notifs";
-      height: calc(100vh - 100px);
-      min-height: 350px;
+      min-height: 0;
     }
     @media (max-width: 900px) {
       .grid {
@@ -1339,7 +1344,7 @@
         '<span class="merge-status ' + readiness.badge + '">' + readiness.label + '</span>' +
         timeHtml +
         facesHtml +
-        '<button class="pr-sub' + (prSubs[pr.id] && !prMuted.has(pr.id) ? ' subscribed' : '') + '" data-id="' + pr.id + '" data-num="' + pr.number + '" data-repo="' + esc(repo) + '">' + (prSubs[pr.id] && !prMuted.has(pr.id) ? 'Unwatch' : 'Watch') + '</button>' +
+        '<button class="pr-sub' + (!prMuted.has(muteKey(repo, pr.number)) ? ' subscribed' : '') + '" data-id="' + pr.id + '" data-num="' + pr.number + '" data-repo="' + esc(repo) + '">' + (!prMuted.has(muteKey(repo, pr.number)) ? 'Unwatch' : 'Watch') + '</button>' +
         '<button class="pr-close" data-num="' + pr.number + '" data-repo="' + esc(repo) + '" data-title="' + esc(pr.title) + '">Close</button>' +
       '</div></div>';
   }
@@ -1383,7 +1388,10 @@
 
       var allPRItems = [].concat(r[0].items, r[1].items, r[2].items);
       var ids = new Set();
-      allPRItems.forEach(function(p) { ids.add(p.id); if (!prMuted.has(p.id)) prSubs[p.id] = true; });
+      allPRItems.forEach(function(p) {
+        ids.add(p.id);
+        if (!prMuted.has(muteKey(repoNameFromPR(p), p.number))) prSubs[p.id] = true;
+      });
       $('pr-badge').textContent = ids.size;
 
       renderPRs();
@@ -1430,7 +1438,9 @@
         else prChecks[pr.id] = { color: 'gray', label: 'no checks' };
 
         var prefs = getNotifPrefs();
-        if (failed > 0 && prefs.merges !== false) sendNotif('Checks failing: ' + pr.title, repo, 'chk-' + pr.id, { url: pr.html_url, kind: 'error', force: true });
+        if (failed > 0 && prefs.merges !== false && !prMuted.has(muteKey(repo, pr.number))) {
+          sendNotif('Checks failing: ' + pr.title, repo, 'chk-' + pr.id, { url: pr.html_url, kind: 'error', force: true });
+        }
       } catch(e) { prChecks[pr.id] = { color: 'gray', label: 'error' }; }
     }
     renderPRs();
@@ -1762,27 +1772,36 @@
   }
 
   // ── Watch/Subscribe PR ──
-  // Persistent "muted" set — PRs the user explicitly unwatched. autoWatchPRs respects this.
+  // Persistent "muted" set — keyed by "owner/repo#number" so notifications (which
+  // arrive with subject.url) can be matched without an id lookup.
   function loadMuted() {
     try { return new Set(JSON.parse(localStorage.getItem('dd-muted') || '[]')); }
     catch(e) { return new Set(); }
   }
   function saveMuted(s) { localStorage.setItem('dd-muted', JSON.stringify(Array.from(s))); }
   var prMuted = loadMuted();
+  function muteKey(repo, num) { return repo + '#' + num; }
+  function muteKeyFromSubjectUrl(subjectUrl) {
+    if (!subjectUrl) return '';
+    // https://api.github.com/repos/owner/repo/pulls/123 → owner/repo#123
+    var m = subjectUrl.match(/\/repos\/([^/]+\/[^/]+)\/(?:pulls|issues)\/(\d+)/);
+    return m ? m[1] + '#' + m[2] : '';
+  }
 
   async function toggleSub(prId, prNum, repo) {
     var token = $('gh-token').value.trim();
     if (!token) return;
     var h = ghH(token);
-    var isSubbed = !!prSubs[prId] && !prMuted.has(prId);
+    var key = muteKey(repo, prNum);
+    var isSubbed = !!prSubs[prId] && !prMuted.has(key);
 
     // Optimistic UI update
     if (isSubbed) {
       delete prSubs[prId];
-      prMuted.add(prId);
+      prMuted.add(key);
     } else {
       prSubs[prId] = true;
-      prMuted.delete(prId);
+      prMuted.delete(key);
     }
     saveMuted(prMuted);
     renderPRs();
@@ -1801,12 +1820,14 @@
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
     } catch(e) {
-      // Roll back optimistic state
-      if (isSubbed) { prSubs[prId] = true; prMuted.delete(prId); }
-      else { delete prSubs[prId]; prMuted.add(prId); }
-      saveMuted(prMuted);
-      renderPRs();
-      showInAppToast('Failed to ' + (isSubbed ? 'unwatch' : 'watch'), e.message, null, 'error');
+      // Server update failed — keep the LOCAL mute state regardless. The dashboard's
+      // own filter (notifications panel + push alerts) is what the user actually sees;
+      // server-side ignore is only a bonus. Common cause: read-only fine-grained PAT
+      // lacks "notifications:write" — that's fine, local mute still works.
+      var msg = isSubbed
+        ? 'Muted locally — server update failed (token may be read-only). Notifications will still be hidden in this dashboard.'
+        : 'Unmuted locally — server update failed (token may be read-only).';
+      showInAppToast(isSubbed ? 'Unwatched (local-only)' : 'Watched (local-only)', msg, null, 'warn');
     }
   }
 
@@ -1816,8 +1837,8 @@
       if (!pr || seen.has(pr.id)) return;
       seen.add(pr.id);
       if (prSubs[pr.id]) return;
-      if (prMuted.has(pr.id)) return; // user explicitly unwatched — respect that
       var repo = repoNameFromPR(pr);
+      if (prMuted.has(muteKey(repo, pr.number))) return; // user explicitly unwatched — respect that
       try {
         var r = await fetch('https://api.github.com/repos/' + repo + '/issues/' + pr.number + '/subscription', {
           method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, h),
@@ -1869,6 +1890,20 @@
     return typeof u === 'string' && u.indexOf('https://api.github.com/') === 0;
   }
 
+  // Fire merged/closed alert using cached PR state from the verified step.
+  // No API call here — we already fetched during author-verification.
+  function announceStateChange(n, h, subtitle, prUrl) {
+    var url = (n.subject && n.subject.url) || '';
+    var cached = notifEventCache['__pr__' + url];
+    if (!cached) return;
+    var tag = 'state-' + n.id;
+    if (cached.merged) {
+      sendNotif('PR merged ✓', subtitle, tag, { url: prUrl, kind: 'success', force: true });
+    } else if (cached.state === 'closed') {
+      sendNotif('PR closed', subtitle, tag, { url: prUrl, kind: 'info', force: true });
+    }
+  }
+
   async function classifyNotif(n, h) {
     var url = (n.subject && n.subject.latest_comment_url) || '';
     if (!isGitHubApiUrl(url)) return null;
@@ -1911,17 +1946,19 @@
       var verified = await Promise.all(prCandidates.map(async function(n) {
         var url = (n.subject && n.subject.url) || '';
         if (!isGitHubApiUrl(url)) return null;
-        if (notifEventCache['__author__' + url] !== undefined) {
-          return notifEventCache['__author__' + url] === me ? n : null;
-        }
+        // Cache PR data per poll: author + current merged/state (used by announceStateChange)
         try {
           var pr = await fetch(url, { headers: h }).then(function(r) { return r.ok ? r.json() : null; });
           var author = pr && pr.user && pr.user.login ? pr.user.login.toLowerCase() : '';
           notifEventCache['__author__' + url] = author;
+          notifEventCache['__pr__' + url] = pr ? { merged: !!pr.merged, state: pr.state } : null;
           return author === me ? n : null;
         } catch(e) { return null; }
       }));
-      var notifs = verified.filter(Boolean);
+      var notifs = verified.filter(Boolean).filter(function(n) {
+        var key = muteKeyFromSubjectUrl(n.subject && n.subject.url);
+        return !key || !prMuted.has(key);
+      });
       if (!notifs.length) { html(body, '<div class="empty">No notifications on your PRs</div>'); actData = []; computeAttention(); return; }
 
       // Enrich notifications with actual review/comment data in parallel
@@ -1957,6 +1994,13 @@
           sendNotif('Review requested', subtitle, 'n-' + n.id, { url: prUrl, kind: 'info' });
         } else if (n.reason === 'mention') {
           sendNotif('You were mentioned', subtitle, 'n-' + n.id, { url: prUrl, kind: 'warn', force: true });
+        } else if (n.reason === 'state_change' || n.reason === 'author') {
+          // For author/state_change we may not know yet if PR was merged or just commented on;
+          // announceStateChange fetches the PR and only fires if state is now closed/merged.
+          var stateKey = muteKeyFromSubjectUrl(n.subject && n.subject.url);
+          if (prefs.merges !== false && (!stateKey || !prMuted.has(stateKey))) {
+            announceStateChange(n, h, subtitle, prUrl);
+          }
         }
       });
       prevNotifIds = new Set(notifs.map(function(n) { return n.id; }));
