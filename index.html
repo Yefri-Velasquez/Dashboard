@@ -918,6 +918,36 @@
   function ghH(t) { return { Authorization: 'Bearer ' + t, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }; }
   function repoNameFromPR(pr) { return (pr && pr.repository_url || '').replace('https://api.github.com/repos/', ''); }
   var REQUIRED_APPROVALS = 2;
+
+  // ── Auth broker integration ──
+  // When the host-side auth-broker is reachable, all GitHub calls are routed
+  // through nginx → broker → api.github.com with token from `gh auth token`.
+  // Token never lands in the browser. Falls back to direct calls (with PAT
+  // from localStorage) when broker isn't running.
+  var useAuthBroker = false;
+  async function detectBroker() {
+    try {
+      var r = await fetch('/proxy/health', { method: 'GET' });
+      useAuthBroker = r.ok;
+    } catch (e) { useAuthBroker = false; }
+    return useAuthBroker;
+  }
+
+  // Wrapper for all GitHub API calls. Rewrites URL + auth based on broker availability.
+  function ghFetch(url, opts) {
+    opts = opts || {};
+    if (useAuthBroker && url.indexOf('https://api.github.com/') === 0) {
+      url = '/proxy/github/' + url.slice('https://api.github.com/'.length);
+      if (opts.headers) {
+        var clean = {};
+        for (var k in opts.headers) {
+          if (k.toLowerCase() !== 'authorization') clean[k] = opts.headers[k];
+        }
+        opts.headers = clean;
+      }
+    }
+    return fetch(url, opts);
+  }
   function $(id) { return document.getElementById(id); }
   function html(el, c) { if (typeof el === 'string') el = $(el); if (el) el.innerHTML = c; }
 
@@ -1069,7 +1099,7 @@
     if (!token) { el.className = 's-test-result err'; el.textContent = 'Enter token'; return; }
     el.className = 's-test-result'; el.textContent = 'Testing...';
     try {
-      var res = await fetch('https://api.github.com/user', { headers: ghH(token) });
+      var res = await ghFetch('https://api.github.com/user', { headers: ghH(token) });
       var data = await res.json();
       if (!res.ok) { el.className = 's-test-result err'; el.textContent = data.message || ('HTTP ' + res.status); return; }
       if (user && data.login.toLowerCase() !== user.toLowerCase()) {
@@ -1232,7 +1262,7 @@
 
   // ── GitHub search ──
   async function ghSearch(q, h) {
-    var res = await fetch('https://api.github.com/search/issues?q=' + encodeURIComponent(q) + '&per_page=30&sort=updated', { headers: h });
+    var res = await ghFetch('https://api.github.com/search/issues?q=' + encodeURIComponent(q) + '&per_page=30&sort=updated', { headers: h });
     var data = await res.json().catch(function() { return {}; });
     if (!res.ok) throw new Error('GitHub ' + res.status + ': ' + (data.message || ''));
     return { items: data.items || [], total: data.total_count || 0 };
@@ -1367,7 +1397,8 @@
   // ── Main PR load ──
   async function loadGH() {
     var token = $('gh-token').value.trim(), user = $('gh-user').value.trim(), body = $('pr-body');
-    if (!token || !user) { html(body, '<div class="empty">Configure GitHub in settings</div>'); return; }
+    // Broker mode: token isn't needed in the browser; user is auto-fetched at startup.
+    if ((!token && !useAuthBroker) || !user) { html(body, '<div class="empty">Configure GitHub in settings</div>'); return; }
     html(body, skeletonHTML(3));
     var h = ghH(token);
     try {
@@ -1375,7 +1406,7 @@
         ghSearch('is:pr is:open author:' + user, h),
         ghSearch('is:pr is:open review-requested:' + user, h),
         ghSearch('is:pr is:open assignee:' + user, h),
-        fetch('https://api.github.com/user', { headers: h })
+        ghFetch('https://api.github.com/user', { headers: h })
       ]);
 
       prData.authored = r[0].items;
@@ -1418,12 +1449,12 @@
       var pr = prs[i];
       var repo = repoNameFromPR(pr);
       try {
-        var prRes = await fetch('https://api.github.com/repos/' + repo + '/pulls/' + pr.number, { headers: h });
+        var prRes = await ghFetch('https://api.github.com/repos/' + repo + '/pulls/' + pr.number, { headers: h });
         if (!prRes.ok) { prChecks[pr.id] = { color: 'gray', label: prRes.status === 401 ? 'auth' : 'error' }; continue; }
         var prDetail = await prRes.json();
         var sha = prDetail.head && prDetail.head.sha;
         if (!sha) { prChecks[pr.id] = { color: 'gray', label: 'no checks' }; continue; }
-        var cRes = await fetch('https://api.github.com/repos/' + repo + '/commits/' + sha + '/check-runs?per_page=100', { headers: h });
+        var cRes = await ghFetch('https://api.github.com/repos/' + repo + '/commits/' + sha + '/check-runs?per_page=100', { headers: h });
         if (!cRes.ok) { prChecks[pr.id] = { color: 'gray', label: 'error' }; continue; }
         var cd = await cRes.json();
         var total = (cd.check_runs || []).length;
@@ -1454,7 +1485,7 @@
       if (pr.draft) continue;
       var repo = repoNameFromPR(pr);
       try {
-        var res = await fetch('https://api.github.com/repos/' + repo + '/pulls/' + pr.number + '/reviews?per_page=100', { headers: h });
+        var res = await ghFetch('https://api.github.com/repos/' + repo + '/pulls/' + pr.number + '/reviews?per_page=100', { headers: h });
         if (!res.ok) continue;
         var reviews = await res.json();
 
@@ -1553,7 +1584,7 @@
     var query = '{' + parts.join(' ') + '}';
 
     try {
-      var res = await fetch('https://api.github.com/graphql', {
+      var res = await ghFetch('https://api.github.com/graphql', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: query })
@@ -1673,7 +1704,7 @@
     var mergedPRCount = 0;
 
     try {
-      var res = await fetch('https://api.github.com/graphql', {
+      var res = await ghFetch('https://api.github.com/graphql', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: query, variables: { login: user, from: from.toISOString(), to: to.toISOString() } })
@@ -1840,7 +1871,7 @@
       var repo = repoNameFromPR(pr);
       if (prMuted.has(muteKey(repo, pr.number))) return; // user explicitly unwatched — respect that
       try {
-        var r = await fetch('https://api.github.com/repos/' + repo + '/issues/' + pr.number + '/subscription', {
+        var r = await ghFetch('https://api.github.com/repos/' + repo + '/issues/' + pr.number + '/subscription', {
           method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, h),
           body: JSON.stringify({ subscribed: true, ignored: false })
         });
@@ -1863,7 +1894,7 @@
     if (!token) return;
     $('confirm-ok').textContent = 'Closing...';
     try {
-      var res = await fetch('https://api.github.com/repos/' + closePR.repo + '/pulls/' + closePR.num, {
+      var res = await ghFetch('https://api.github.com/repos/' + closePR.repo + '/pulls/' + closePR.num, {
         method: 'PATCH', headers: Object.assign({ 'Content-Type': 'application/json' }, ghH(token)),
         body: JSON.stringify({ state: 'closed' })
       });
@@ -1936,7 +1967,7 @@
     var h = ghH(token);
     try {
       var since = new Date(Date.now() - 14 * 86400000).toISOString();
-      var res = await fetch('https://api.github.com/notifications?all=true&per_page=100&since=' + encodeURIComponent(since), { headers: h });
+      var res = await ghFetch('https://api.github.com/notifications?all=true&per_page=100&since=' + encodeURIComponent(since), { headers: h });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var allNotifs = await res.json();
       var me = ($('gh-user').value || '').trim().toLowerCase();
@@ -2194,7 +2225,7 @@
     try {
       var page = 1, all = [];
       while (page <= 5) {
-        var res = await fetch('https://api.github.com/user/repos?sort=pushed&per_page=50&page=' + page + '&affiliation=owner,collaborator,organization_member', { headers: ghH(token) });
+        var res = await ghFetch('https://api.github.com/user/repos?sort=pushed&per_page=50&page=' + page + '&affiliation=owner,collaborator,organization_member', { headers: ghH(token) });
         if (!res.ok) break;
         var data = await res.json();
         if (!data.length) break;
@@ -2218,10 +2249,26 @@
   setTheme(localStorage.getItem('dd-theme') || 'system');
   loadStylePrefs();
   setupRefresh();
-  if ($('gh-token').value) {
-    requestNotifPerm();
-    loadAll();
-  }
+  // Detect broker first; if available, dashboard works without a stored PAT.
+  detectBroker().then(async function(active) {
+    if (active) {
+      // Resolve the authenticated user from the broker so gh-user gets populated automatically.
+      try {
+        var r = await ghFetch('https://api.github.com/user', {});
+        if (r.ok) {
+          var u = await r.json();
+          if (u.login && !$('gh-user').value) $('gh-user').value = u.login;
+          if (u.avatar_url) showUserAvatar(u.avatar_url, u.login);
+        }
+      } catch (e) {}
+      showInAppToast('Auth broker active', 'GitHub calls routed via host (token from `gh` CLI).', null, 'success');
+      requestNotifPerm();
+      loadAll();
+    } else if ($('gh-token').value) {
+      requestNotifPerm();
+      loadAll();
+    }
+  });
 </script>
 </body>
 </html>
