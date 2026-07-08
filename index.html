@@ -200,6 +200,90 @@
     .heatmap-cell.l3 { background: color-mix(in srgb, var(--green) 76%, var(--bg-3)); }
     .heatmap-cell.l4 { background: var(--green); }
 
+    /* ── Quick Launch ── */
+    .quick-launch {
+      position: relative;
+      padding: 10px 16px; min-width: 180px; max-width: 460px; flex-shrink: 0;
+      background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow-panel);
+      display: flex; flex-direction: column; gap: 8px; justify-content: center;
+    }
+    .ql-list {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center; align-content: flex-start;
+      max-height: 76px; overflow-y: auto; padding-right: 2px;
+      scrollbar-width: thin; scrollbar-color: var(--bg-3) transparent;
+    }
+    .ql-list::-webkit-scrollbar { width: 5px; }
+    .ql-list::-webkit-scrollbar-track { background: transparent; }
+    .ql-list::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 3px; }
+    .ql-chip {
+      font-size: 12px; font-weight: 500; padding: 4px 24px 4px 11px; border-radius: 999px;
+      text-decoration: none; white-space: nowrap; border: 1px solid transparent;
+      transition: border-color 0.15s ease;
+    }
+    .ql-chip:hover { border-color: currentColor; }
+    .ql-blue   { background: var(--blue-dim);   color: var(--blue); }
+    .ql-green  { background: var(--green-dim);  color: var(--green); }
+    .ql-purple { background: var(--purple-dim); color: var(--purple); }
+    .ql-orange { background: var(--orange-dim); color: var(--orange); }
+    .ql-red    { background: var(--red-dim);    color: var(--red); }
+    .ql-accent { background: var(--accent-dim); color: var(--accent); }
+    .ql-add {
+      width: 24px; height: 24px; border-radius: 999px; flex-shrink: 0;
+      border: 1px dashed var(--border-hover); background: none; color: var(--text-2);
+      cursor: pointer; font-size: 15px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .ql-add:hover { color: var(--text-0); border-color: var(--text-2); }
+
+    /* Chip delete — subtly visible always, fills in on hover */
+    .ql-chip-wrap { position: relative; display: inline-flex; }
+    .ql-chip-x {
+      position: absolute; top: 50%; right: 5px; transform: translateY(-50%); padding: 0;
+      width: 14px; height: 14px; border-radius: 50%; border: none;
+      background: var(--red); color: #fff; font-size: 10px; line-height: 1;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      opacity: 0.5; transition: opacity 0.15s ease, transform 0.1s ease;
+    }
+    .ql-chip-wrap:hover .ql-chip-x { opacity: 1; transform: translateY(-50%) scale(1.1); }
+
+    /* Add-link popup */
+    .ql-pop {
+      position: absolute; top: calc(100% + 8px); right: 12px; z-index: 40;
+      width: 244px; padding: 12px;
+      background: var(--bg-2); border: 1px solid var(--border-hover); border-radius: 8px;
+      box-shadow: var(--shadow-pop);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .ql-pop[hidden] { display: none; }
+    .ql-pop-in {
+      background: var(--bg-1); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text-0); font-family: var(--sans); font-size: 12px; padding: 7px 10px; width: 100%;
+    }
+    .ql-pop-in:focus { outline: none; border-color: var(--accent); }
+    .ql-pop-colors { display: flex; gap: 6px; padding: 2px 0; }
+    .ql-swatch {
+      width: 18px; height: 18px; border-radius: 50%; cursor: pointer; padding: 0;
+      border: 2px solid transparent; transition: transform 0.1s ease;
+    }
+    .ql-swatch:hover { transform: scale(1.15); }
+    .ql-swatch.active { border-color: var(--text-0); }
+    .ql-sw-blue   { background: var(--blue); }
+    .ql-sw-green  { background: var(--green); }
+    .ql-sw-purple { background: var(--purple); }
+    .ql-sw-orange { background: var(--orange); }
+    .ql-sw-red    { background: var(--red); }
+    .ql-sw-accent { background: var(--accent); }
+    .ql-pop-btns { display: flex; gap: 6px; justify-content: flex-end; margin-top: 2px; }
+    .ql-pop-btns button {
+      font-family: var(--mono); font-size: 11px; padding: 6px 12px; border-radius: 6px; cursor: pointer;
+    }
+    .ql-pop-cancel { border: 1px solid var(--border); background: var(--bg-3); color: var(--text-1); }
+    .ql-pop-cancel:hover { color: var(--text-0); }
+    .ql-pop-save { border: 1px solid var(--accent); background: var(--accent-dim); color: var(--accent); }
+    .ql-pop-save:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+
     /* ── Grid ── */
     .grid {
       display: grid;
@@ -740,6 +824,19 @@
       <span class="commit-label">Achievements</span>
       <div class="ach-list" id="ach-list"></div>
     </div>
+    <div class="quick-launch" id="quick-launch">
+      <span class="commit-label">Quick Launch</span>
+      <div class="ql-list" id="ql-list"></div>
+      <div class="ql-pop" id="ql-pop" hidden>
+        <input id="ql-pop-label" class="ql-pop-in" type="text" placeholder="Label" maxlength="24" onkeydown="qlPopKey(event)" />
+        <input id="ql-pop-url" class="ql-pop-in" type="text" placeholder="github.com/org/repo" onkeydown="qlPopKey(event)" />
+        <div class="ql-pop-colors" id="ql-pop-colors"></div>
+        <div class="ql-pop-btns">
+          <button type="button" class="ql-pop-cancel" onclick="closeQLPop()">Cancel</button>
+          <button type="button" class="ql-pop-save" onclick="saveQLPop()">Add</button>
+        </div>
+      </div>
+    </div>
     <div class="commit-mini" id="commit-mini">
       <div class="commit-header">
         <span class="commit-label">Last 12 weeks</span>
@@ -1133,8 +1230,96 @@
   function openSettings() { $('settings-overlay').classList.add('show'); loadNotifPrefs(); updateNotifPermUI(); }
   function closeSettings() { $('settings-overlay').classList.remove('show'); }
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { hideConfirm(); closeSettings(); }
+    if (e.key === 'Escape') { hideConfirm(); closeQLPop(); closeSettings(); }
   });
+
+  // ── Quick Launch ──
+  var QL_COLORS = ['blue', 'green', 'purple', 'orange', 'red', 'accent'];
+
+  function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
+
+  function loadQuickLinks() {
+    try { var a = JSON.parse(localStorage.getItem('dd-quicklinks') || '[]'); return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+  }
+  function saveQuickLinks(links) { localStorage.setItem('dd-quicklinks', JSON.stringify(links)); }
+
+  function normalizeUrl(u) {
+    u = String(u || '').trim();
+    if (!u) return '';
+    return /^https?:\/\//i.test(u) ? u : 'https://' + u;
+  }
+  function qlColor(c) { return QL_COLORS.indexOf(c) >= 0 ? c : 'blue'; }
+
+  function renderQuickLaunch() {
+    var wrap = $('ql-list');
+    if (!wrap) return;
+    var h = '';
+    loadQuickLinks().forEach(function(l, i) {
+      if (!l || !l.label || !l.url) return;
+      h += '<span class="ql-chip-wrap">' +
+             '<a class="ql-chip ql-' + qlColor(l.color) + '" href="' + escAttr(normalizeUrl(l.url)) +
+             '" target="_blank" rel="noopener" title="' + escAttr(normalizeUrl(l.url)) + '">' + esc(l.label) + '</a>' +
+             '<button class="ql-chip-x" onclick="deleteQL(' + i + ')" title="Remove" aria-label="Remove link">&times;</button>' +
+           '</span>';
+    });
+    h += '<button class="ql-add" onclick="openQLPop()" title="Add a quick link" aria-label="Add a quick link">+</button>';
+    wrap.innerHTML = h;
+  }
+
+  function deleteQL(i) {
+    var links = loadQuickLinks();
+    links.splice(i, 1);
+    saveQuickLinks(links);
+    renderQuickLaunch();
+  }
+
+  // ── Add-link popup ──
+  var qlPopColor = 'blue';
+
+  function renderQLPopColors() {
+    var box = $('ql-pop-colors');
+    if (!box) return;
+    box.innerHTML = QL_COLORS.map(function(c) {
+      return '<button type="button" class="ql-swatch ql-sw-' + c + (c === qlPopColor ? ' active' : '') +
+             '" onclick="setQLPopColor(\'' + c + '\')" aria-label="' + c + '"></button>';
+    }).join('');
+  }
+  function setQLPopColor(c) { qlPopColor = qlColor(c); renderQLPopColors(); }
+
+  function openQLPop() {
+    qlPopColor = 'blue';
+    $('ql-pop-label').value = '';
+    $('ql-pop-url').value = '';
+    renderQLPopColors();
+    $('ql-pop').hidden = false;
+    setTimeout(function() { $('ql-pop-label').focus(); document.addEventListener('mousedown', qlPopOutside); }, 0);
+  }
+  function closeQLPop() {
+    var pop = $('ql-pop');
+    if (pop) pop.hidden = true;
+    document.removeEventListener('mousedown', qlPopOutside);
+  }
+  function qlPopOutside(e) {
+    var pop = $('ql-pop');
+    if (!pop || pop.hidden) return;
+    if (!pop.contains(e.target) && !e.target.classList.contains('ql-add')) closeQLPop();
+  }
+  function qlPopKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); saveQLPop(); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeQLPop(); }
+  }
+  function saveQLPop() {
+    var label = $('ql-pop-label').value.trim();
+    var url = normalizeUrl($('ql-pop-url').value);
+    if (!label) { $('ql-pop-label').focus(); return; }
+    if (!url) { $('ql-pop-url').focus(); return; }
+    var links = loadQuickLinks();
+    links.push({ label: label, url: url, color: qlPopColor });
+    saveQuickLinks(links);
+    renderQuickLaunch();
+    closeQLPop();
+  }
 
   function loadSaved() {
     try {
@@ -2335,6 +2520,7 @@
   loadSaved();
   setTheme(localStorage.getItem('dd-theme') || 'system');
   loadStylePrefs();
+  renderQuickLaunch();
   setupRefresh();
   // Detect broker first; if available, dashboard works without a stored PAT.
   detectBroker().then(async function(active) {
