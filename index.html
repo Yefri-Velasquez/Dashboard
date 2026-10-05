@@ -18,7 +18,7 @@
 
     :root {
       --bg-0: #0a0c10; --bg-1: #10141b; --bg-2: #171c25; --bg-3: #222834;
-      --text-0: #eef1f6; --text-1: #aab3c1; --text-2: #6e7787;
+      --text-0: #eef1f6; --text-1: #aab3c1; --text-2: #7d8696;
       --accent: #e8b931; --accent-dim: rgba(232,185,49,0.12);
       --green: #46c37b; --green-dim: rgba(70,195,123,0.12);
       --orange: #e8924a; --orange-dim: rgba(232,146,74,0.12);
@@ -37,7 +37,7 @@
 
     :root[data-theme="light"] {
       --bg-0: #f3f4f7; --bg-1: #ffffff; --bg-2: #f7f8fa; --bg-3: #eaecf1;
-      --text-0: #171b22; --text-1: #4d5563; --text-2: #8a92a2;
+      --text-0: #171b22; --text-1: #4d5563; --text-2: #6b7280;
       --accent: #b8860b; --accent-dim: rgba(184,134,11,0.10);
       --green: #1a9e56; --green-dim: rgba(26,158,86,0.10);
       --orange: #d97706; --orange-dim: rgba(217,119,6,0.10);
@@ -97,21 +97,27 @@
       color: var(--bg-0); box-shadow: 0 2px 8px var(--accent-dim);
     }
     .hdr-mark svg { width: 15px; height: 15px; }
-    .hdr h1 { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
+    .hdr h1 { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
+    @media (max-width: 600px) {
+      .hdr-right { gap: 8px; }
+      .user-name { display: none !important; }
+    }
     .hdr-sub { font-size: 12px; color: var(--text-2); margin-left: 2px; display: none; }
     @media (min-width: 720px) { .hdr-sub { display: inline; } }
 
     .hdr-right { display: flex; align-items: center; gap: 14px; }
     .hdr-status {
-      font-family: var(--mono); font-size: 11px; color: var(--text-2);
+      font-family: var(--mono); font-size: 11px; color: var(--text-2); white-space: nowrap;
       display: flex; align-items: center; gap: 7px;
       padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px;
       background: var(--bg-1);
     }
     .hdr-status .pulse {
-      width: 6px; height: 6px; border-radius: 50%; background: var(--green);
-      animation: pulse 2.4s ease-in-out infinite;
+      width: 6px; height: 6px; border-radius: 50%; background: var(--text-2);
     }
+    .hdr-status.fresh .pulse { background: var(--green); animation: pulse 2.4s ease-in-out infinite; }
+    .hdr-status.stale { color: var(--orange); }
+    .hdr-status.stale .pulse { background: var(--orange); }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
     .user-chip { display: flex; align-items: center; gap: 8px; }
     .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-hover); object-fit: cover; }
@@ -132,18 +138,16 @@
     .top-row { display: flex; gap: var(--panel-gap); margin-bottom: var(--panel-gap); }
 
     .attention-strip {
-      display: flex; gap: 8px; padding: 12px 16px; flex: 1;
+      display: flex; flex-direction: column; gap: 9px; padding: 12px 16px; flex: 1; min-width: 0;
       background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius);
       box-shadow: var(--shadow-panel);
-      align-items: center; overflow-x: auto; scrollbar-width: none;
     }
+    .attn-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .attn-chip {
       font-size: 12px; font-weight: 500; padding: 5px 12px;
       border-radius: 999px; display: flex; align-items: center; gap: 6px;
-      white-space: nowrap; cursor: pointer; border: 1px solid transparent;
-      transition: border-color 0.15s ease;
+      white-space: nowrap; border: 1px solid transparent;
     }
-    .attn-chip:hover { border-color: currentColor; }
     .attn-urgent { background: var(--red-dim); color: var(--red); }
     .attn-warn { background: var(--orange-dim); color: var(--orange); }
     .attn-ready { background: var(--green-dim); color: var(--green); }
@@ -156,16 +160,16 @@
     .attn-empty { font-size: 12px; color: var(--text-2); }
 
     .commit-mini {
-      padding: 10px 16px; min-width: 300px;
+      padding: 12px 16px; min-width: 280px;
       background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius);
       box-shadow: var(--shadow-panel);
-      display: flex; flex-direction: column; gap: 7px; justify-content: center;
+      display: flex; flex-direction: column; gap: 9px;
     }
     .achievements {
-      padding: 10px 16px; max-width: 620px; flex-shrink: 0;
+      padding: 12px 16px; max-width: 620px; flex-shrink: 1;
       background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius);
       box-shadow: var(--shadow-panel);
-      display: flex; flex-direction: column; gap: 7px; min-width: 0; justify-content: center;
+      display: flex; flex-direction: column; gap: 9px; min-width: 0;
     }
     .ach-list {
       display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; overflow-x: auto;
@@ -183,6 +187,17 @@
     .ach-item img { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; }
     .ach-name { font-size: 11px; font-weight: 500; color: var(--text-1); white-space: nowrap; }
     .ach-tier { font-family: var(--mono); font-size: 10px; color: var(--accent); font-weight: 600; }
+    a.ach-item { text-decoration: none; transition: border-color 0.15s ease; }
+    a.ach-item:hover, a.ach-item:focus-visible { border-color: var(--border-hover); }
+    .ach-tip {
+      position: fixed; z-index: 150; max-width: 280px; padding: 10px 12px; border-radius: 8px;
+      background: var(--bg-2); border: 1px solid var(--border-hover); box-shadow: var(--shadow-pop);
+      pointer-events: none; animation: fadeIn 0.12s ease;
+    }
+    .ach-tip[hidden] { display: none; }
+    .ach-tip-title { font-size: 12.5px; font-weight: 600; color: var(--text-0); }
+    .ach-tip-desc { font-size: 12px; color: var(--text-1); margin-top: 3px; line-height: 1.45; }
+    .ach-tip-progress { font-size: 11px; color: var(--accent); margin-top: 6px; font-family: var(--mono); }
     .commit-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
     .commit-label {
       font-size: 10px; font-weight: 600; color: var(--text-2);
@@ -193,20 +208,35 @@
     .commit-stat-val { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
     .commit-stat-label { font-size: 11px; color: var(--text-2); }
     .heatmap { display: flex; gap: 3px; align-items: flex-end; }
-    .heatmap-col { display: flex; flex-direction: column; gap: 3px; }
-    .heatmap-cell { width: 9px; height: 9px; border-radius: 2px; background: var(--bg-3); }
+    .heatmap-col { display: flex; flex-direction: column; gap: 2px; }
+    .heatmap-cell { width: 8px; height: 8px; border-radius: 2px; background: var(--bg-3); }
     .heatmap-cell.l1 { background: color-mix(in srgb, var(--green) 28%, var(--bg-3)); }
     .heatmap-cell.l2 { background: color-mix(in srgb, var(--green) 52%, var(--bg-3)); }
     .heatmap-cell.l3 { background: color-mix(in srgb, var(--green) 76%, var(--bg-3)); }
     .heatmap-cell.l4 { background: var(--green); }
 
+    @media (max-width: 1280px) {
+      .top-row { flex-wrap: wrap; }
+      .attention-strip { flex-basis: 100%; }
+      .achievements, .quick-launch { max-width: none; flex: 1 1 260px; }
+      .commit-mini { flex: 1 1 300px; }
+    }
+    @media (max-width: 900px) {
+      .shell { height: auto; min-height: 100vh; padding: 0 16px 16px; }
+      .commit-mini { min-width: 0; overflow-x: auto; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+
     /* ── Quick Launch ── */
     .quick-launch {
       position: relative;
-      padding: 10px 16px; min-width: 180px; max-width: 460px; flex-shrink: 0;
+      padding: 12px 16px; min-width: 180px; max-width: 460px; flex-shrink: 0;
       background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius);
       box-shadow: var(--shadow-panel);
-      display: flex; flex-direction: column; gap: 8px; justify-content: center;
+      display: flex; flex-direction: column; gap: 9px;
     }
     .ql-list {
       display: flex; flex-wrap: wrap; gap: 6px; align-items: center; align-content: flex-start;
@@ -246,7 +276,7 @@
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       opacity: 0.5; transition: opacity 0.15s ease, transform 0.1s ease;
     }
-    .ql-chip-wrap:hover .ql-chip-x { opacity: 1; transform: translateY(-50%) scale(1.1); }
+    .ql-chip-wrap:hover .ql-chip-x, .ql-chip-x:focus-visible { opacity: 1; transform: translateY(-50%) scale(1.1); }
 
     /* Add-link popup */
     .ql-pop {
@@ -302,6 +332,7 @@
         grid-template-areas: "prs" "mergeq" "notifs" !important;
       }
       .grid .p-body { max-height: 420px; }
+      .grid .panel-prs { grid-row: auto; }
     }
 
     /* ── Panels ── */
@@ -341,8 +372,26 @@
       transition: color 0.15s, background 0.15s;
     }
     .p-refresh:hover { color: var(--text-0); background: var(--bg-3); }
+    .p-refresh svg { width: 14px; height: 14px; }
+    .p-refresh.spinning { color: var(--accent); pointer-events: none; }
+    .p-refresh.spinning svg { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .tab-row { display: flex; gap: 2px; padding: 0 16px 10px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+    .tab-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+      padding: 0 16px 10px; flex-shrink: 0; border-bottom: 1px solid var(--border);
+    }
+    .tab-list { display: flex; gap: 2px; }
+    .pr-filter { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .pr-filter-btn {
+      font-size: 11.5px; font-weight: 500; padding: 4px 10px;
+      background: none; border: none; color: var(--text-2); cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .pr-filter-btn + .pr-filter-btn { border-left: 1px solid var(--border); }
+    .pr-filter-btn:hover { color: var(--text-0); }
+    .pr-filter-btn[aria-pressed="true"] { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+    .pr-filter-btn[aria-pressed="true"] .tab-count { color: inherit; }
     .tab {
       font-size: 12px; font-weight: 500; padding: 5px 12px;
       border-radius: 999px; border: 1px solid transparent; background: none;
@@ -374,11 +423,12 @@
     .pr-item:nth-child(4) { animation-delay: 0.08s; }
     .pr-item:nth-child(5) { animation-delay: 0.10s; }
     .pr-item:nth-child(n+6) { animation-delay: 0.12s; }
+    .p-body.settled > * { animation: none; }
     @keyframes itemSlide { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
     .pr-item:last-child { border-bottom: none; }
     .pr-item:hover { background: var(--bg-2); }
-    .pr-item:hover .pr-close { opacity: 1; }
-    .pr-item:hover .pr-sub { opacity: 1; }
+    .pr-item:hover .pr-close, .pr-item:focus-within .pr-close { opacity: 1; }
+    .pr-item:hover .pr-sub, .pr-item:focus-within .pr-sub { opacity: 1; }
     .pr-item.ready { border-left-color: var(--green); }
     .pr-item.needs-review { border-left-color: var(--orange); }
     .pr-item.changes-requested { border-left-color: var(--red); }
@@ -404,7 +454,9 @@
       font-size: 11px; color: var(--text-2); margin-top: 4px;
       display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     }
-    .pr-meta > span:first-child { font-family: var(--mono); font-size: 10.5px; }
+    .pr-ref { font-family: var(--mono); font-size: 10.5px; }
+    .pr-link { display: flex; align-items: flex-start; gap: 10px; text-decoration: none; color: inherit; flex: 1; min-width: 0; }
+    .pr-actions { display: flex; gap: 5px; }
 
     /* Pills */
     .pill {
@@ -430,7 +482,7 @@
     .merge-waiting { background: var(--orange-dim); color: var(--orange); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--orange) 35%, transparent); }
     .merge-draft { background: var(--bg-3); color: var(--text-2); }
 
-    .pr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+    .pr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
     .pr-time { font-family: var(--mono); font-size: 10.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
     .pr-age-warn { color: var(--orange); }
     .pr-age-old { color: var(--red); }
@@ -471,8 +523,8 @@
       white-space: nowrap;
     }
     .pr-sub:hover { background: var(--accent); color: var(--bg-0); }
-    .pr-sub.subscribed { opacity: 1; background: var(--accent-dim); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
-    .pr-sub.subscribed:hover { background: transparent; }
+    .pr-sub.muted { opacity: 1; color: var(--text-2); border-color: var(--border-hover); }
+    .pr-sub.muted:hover { color: var(--bg-0); background: var(--accent); border-color: var(--accent); }
 
     /* ── Branch items ── */
     .br-item {
@@ -505,16 +557,8 @@
       font-family: var(--mono); font-size: 10px; font-weight: 600; padding: 1.5px 8px;
       border-radius: 999px; background: var(--bg-3); color: var(--text-1); flex-shrink: 0;
     }
-    .mq-bar-wrap { height: 5px; background: var(--bg-3); border-radius: 999px; overflow: hidden; margin-bottom: 7px; }
-    .mq-bar { height: 100%; border-radius: 999px; transition: width 0.3s; }
-    .mq-bar.green { background: var(--green); }
-    .mq-bar.orange { background: var(--orange); }
-    .mq-bar.blue { background: var(--blue); }
-    .mq-detail { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-2); }
-    .mq-eta { color: var(--green); font-family: var(--mono); font-size: 10.5px; }
-    .mq-status-running { color: var(--green); font-weight: 500; }
-    .mq-status-queued { color: var(--orange); font-weight: 500; }
-    .mq-status-waiting { color: var(--text-2); }
+    .mq-detail { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-2); }
+    .mq-eta { color: var(--text-2); font-family: var(--mono); font-size: 10.5px; }
 
     /* ── Notification items ── */
     .act-item {
@@ -583,6 +627,39 @@
     .skeleton:nth-child(3) .skeleton-line { animation-delay: 0.3s; }
     @keyframes shimmer { 0%,100% { opacity: 0.4; } 50% { opacity: 0.85; } }
 
+    /* ── Toasts ── */
+    .toast-stack {
+      position: fixed; right: 16px; bottom: 16px; z-index: 200;
+      display: flex; flex-direction: column; gap: 8px;
+      width: min(360px, calc(100vw - 32px)); pointer-events: none;
+    }
+    .toast {
+      --toast-color: var(--accent);
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 10px 11px 14px; border-radius: 10px;
+      background: var(--bg-1); border: 1px solid var(--border-hover);
+      box-shadow: var(--shadow-pop); pointer-events: auto;
+      position: relative; overflow: hidden;
+      animation: toastIn 0.25s cubic-bezier(0.16,1,0.3,1);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .toast::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--toast-color); }
+    .toast.leaving { opacity: 0; transform: translateY(6px); }
+    .toast-link { cursor: pointer; }
+    .toast-link:hover { border-color: var(--toast-color); }
+    .toast-success { --toast-color: var(--green); }
+    .toast-warn { --toast-color: var(--orange); }
+    .toast-error { --toast-color: var(--red); }
+    .toast-text { flex: 1; min-width: 0; }
+    .toast-title { font-size: 12.5px; font-weight: 600; color: var(--text-0); overflow-wrap: anywhere; }
+    .toast-body { font-size: 12px; color: var(--text-1); margin-top: 2px; line-height: 1.45; overflow-wrap: anywhere; }
+    .toast-x {
+      width: 22px; height: 22px; border-radius: 6px; border: none; background: none; flex-shrink: 0;
+      color: var(--text-2); cursor: pointer; font-size: 15px; line-height: 1;
+    }
+    .toast-x:hover { color: var(--text-0); background: var(--bg-3); }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } }
+
     /* ── Confirm dialog ── */
     .confirm-overlay {
       position: fixed; inset: 0; background: rgba(4,6,10,0.65);
@@ -599,7 +676,6 @@
       box-shadow: var(--shadow-pop);
     }
     @keyframes scaleIn { from { transform: scale(0.94) translateY(8px); opacity: 0; } }
-    @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } }
     .confirm-box h3 { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; margin-bottom: 8px; }
     .confirm-box p { font-size: 13px; color: var(--text-1); margin-bottom: 20px; line-height: 1.55; }
     .confirm-box code { font-family: var(--mono); font-size: 11.5px; background: var(--bg-3); padding: 2px 7px; border-radius: 5px; }
@@ -689,7 +765,8 @@
       width: 13px; height: 13px; border-radius: 50%;
       background: var(--text-2); transition: transform 0.2s, background 0.2s;
     }
-    .s-toggle input { display: none; }
+    .s-toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+    .s-toggle input:focus-visible + .s-toggle-track { outline: 2px solid var(--accent); outline-offset: 2px; }
     .s-toggle input:checked + .s-toggle-track { background: var(--green-dim); border-color: var(--green); }
     .s-toggle input:checked + .s-toggle-track::after { transform: translateX(15px); background: var(--green); }
     .s-theme { display: inline-flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
@@ -802,7 +879,7 @@
     <div class="hdr-right">
       <div class="hdr-status" id="hdr-status">
         <span class="pulse"></span>
-        <span id="refresh-time">--:--</span>
+        <span id="refresh-time">Not loaded</span>
         <span class="notif-indicator" id="notif-ind"></span>
       </div>
       <div class="user-chip">
@@ -817,8 +894,9 @@
 
   <!-- Top row: attention chips + achievements + commit heatmap -->
   <div class="top-row">
-    <div class="attention-strip" id="attention-strip">
-      <span class="attn-empty">Loading&hellip;</span>
+    <div class="attention-strip">
+      <span class="commit-label">Needs attention</span>
+      <div class="attn-chips" id="attention-strip"><span class="attn-empty">Loading&hellip;</span></div>
     </div>
     <div class="achievements" id="achievements" style="display:none">
       <span class="commit-label">Achievements</span>
@@ -841,7 +919,7 @@
       <div class="commit-header">
         <span class="commit-label">Last 12 weeks</span>
         <div class="commit-stats" id="commit-stats">
-          <div class="commit-stat"><span class="commit-stat-val" style="color:var(--green)" id="commit-count">--</span><span class="commit-stat-label">commits</span></div>
+          <div class="commit-stat"><span class="commit-stat-val" style="color:var(--green)" id="commit-count">--</span><span class="commit-stat-label">contributions</span></div>
           <div class="commit-stat"><span class="commit-stat-val" style="color:var(--blue)" id="merged-count">--</span><span class="commit-stat-label">PRs merged</span></div>
         </div>
       </div>
@@ -860,13 +938,20 @@
         <div class="p-title">Pull Requests</div>
         <div class="p-actions">
           <span class="p-badge" id="pr-badge" style="background:var(--blue-dim);color:var(--blue)">&mdash;</span>
-          <button class="p-refresh" onclick="loadGH()" aria-label="Refresh PRs">&#8635;</button>
+          <button class="p-refresh" onclick="loadGH()" aria-label="Refresh PRs"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.61-3.89"/><path d="M13.5 2.5v3h-3"/></svg></button>
         </div>
       </div>
       <div class="tab-row">
-        <button class="tab active" onclick="setPRTab('authored',this)">authored</button>
-        <button class="tab" onclick="setPRTab('review',this)">reviews</button>
-        <button class="tab" onclick="setPRTab('assigned',this)">assigned</button>
+        <div class="tab-list" role="tablist" aria-label="Pull request list">
+          <button class="tab active" role="tab" aria-selected="true" aria-controls="pr-body" onclick="setPRTab('authored',this)">authored</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="pr-body" onclick="setPRTab('review',this)">reviews</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="pr-body" onclick="setPRTab('assigned',this)">assigned</button>
+        </div>
+        <div class="pr-filter" role="group" aria-label="Filter by PR state">
+          <button class="pr-filter-btn" data-filter="all" onclick="setPRStateFilter('all')">All<span class="tab-count" id="pf-count-all"></span></button>
+          <button class="pr-filter-btn" data-filter="open" onclick="setPRStateFilter('open')">Open<span class="tab-count" id="pf-count-open"></span></button>
+          <button class="pr-filter-btn" data-filter="draft" onclick="setPRStateFilter('draft')">Draft<span class="tab-count" id="pf-count-draft"></span></button>
+        </div>
       </div>
       <div class="p-body" id="pr-body"><div class="empty">Configure GitHub in settings<br><button class="empty-cta" onclick="openSettings()">Set up now</button></div></div>
     </div>
@@ -877,7 +962,7 @@
         <div class="p-title">Merge Queue</div>
         <div class="p-actions">
           <span class="p-badge" id="mq-badge" style="background:var(--green-dim);color:var(--green)">0</span>
-          <button class="p-refresh" onclick="loadMergeQueue()" aria-label="Refresh merge queue">&#8635;</button>
+          <button class="p-refresh" onclick="loadMergeQueue()" aria-label="Refresh merge queue"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.61-3.89"/><path d="M13.5 2.5v3h-3"/></svg></button>
         </div>
       </div>
       <div class="p-body" id="mq-body"><div class="empty">No PRs in merge queue</div></div>
@@ -887,7 +972,10 @@
     <div class="panel panel-notifs" id="panel-notifs">
       <div class="p-head">
         <div class="p-title">Notifications</div>
-        <button class="p-refresh" onclick="loadNotifs()" aria-label="Refresh notifications">&#8635;</button>
+        <div class="p-actions">
+          <span class="p-badge" id="act-badge" style="background:var(--blue-dim);color:var(--blue)" title="Unread">0</span>
+          <button class="p-refresh" onclick="loadNotifs()" aria-label="Refresh notifications"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.61-3.89"/><path d="M13.5 2.5v3h-3"/></svg></button>
+        </div>
       </div>
       <div class="p-body" id="act-body"><div class="empty">Notifications appear after setup<br><button class="empty-cta" onclick="openSettings()">Set up now</button></div></div>
     </div>
@@ -895,9 +983,12 @@
   </div>
 </div>
 
+<div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
+<div class="ach-tip" id="ach-tip" role="tooltip" hidden></div>
+
 <!-- Confirm dialog -->
 <div class="confirm-overlay" id="confirm-overlay">
-  <div class="confirm-box">
+  <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg">
     <h3 id="confirm-title">Close PR?</h3>
     <p id="confirm-msg"></p>
     <div class="confirm-btns">
@@ -909,24 +1000,24 @@
 
 <!-- Settings overlay -->
 <div class="settings-overlay" id="settings-overlay" onclick="if(event.target===this&&!$('confirm-overlay').classList.contains('show'))closeSettings()">
-  <div class="settings-box">
+  <div class="settings-box" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="s-header">
-      <h2>Settings</h2>
-      <button class="s-close" onclick="closeSettings()">&times;</button>
+      <h2 id="settings-title">Settings</h2>
+      <button class="s-close" onclick="closeSettings()" aria-label="Close settings">&times;</button>
     </div>
 
     <div class="s-section">
       <div class="s-label">GitHub</div>
-      <div class="s-desc">Use a <strong>fine-grained, read-only</strong> token scoped to only the repos you watch. Required permissions: <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Contents: Read</code>, <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Pull requests: Read</code>, <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Issues: Read</code>, <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Metadata: Read</code>, and account <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Notifications: Read</code>. The dashboard never writes — a leaked read-only token can&rsquo;t close PRs, push code, or modify notifications. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">Create fine-grained token</a></div>
+      <div class="s-desc">Use a <strong>fine-grained, read-only</strong> token scoped to only the repos you watch. Required permissions: <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Contents: Read</code>, <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Pull requests: Read</code>, <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Issues: Read</code>, <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Metadata: Read</code>, and account <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Notifications: Read</code>. Everything else is read-only. Two buttons write: <strong>Close</strong> closes a PR, and <strong>Watch/Unwatch</strong> changes your GitHub subscription. With a read-only token both fail safely: Close shows an error and Watch falls back to muting in this dashboard only. To use them, run the auth broker or add <code style="font-family:var(--mono);font-size:10px;background:var(--bg-3);padding:1px 4px;border-radius:2px">Pull requests: Write</code>. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">Create fine-grained token</a></div>
       <div class="s-fields">
         <div class="s-row">
-          <div class="s-field"><label>Token</label><input id="gh-token" type="password" placeholder="ghp_..." /></div>
-          <div class="s-field"><label>Username</label><input id="gh-user" type="text" placeholder="username" /></div>
+          <div class="s-field"><label for="gh-token">Token</label><input id="gh-token" type="password" placeholder="ghp_..." autocomplete="off" /></div>
+          <div class="s-field"><label for="gh-user">Username</label><input id="gh-user" type="text" placeholder="username" autocomplete="username" /></div>
         </div>
         <div class="s-field">
           <label>Repos to watch <span style="color:var(--text-2);font-weight:400">(auto-detected)</span></label>
           <div id="repo-select-wrap" style="position:relative">
-            <div id="repo-select" class="repo-select" onclick="toggleRepoDropdown(event)">
+            <div id="repo-select" class="repo-select" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-controls="repo-dropdown" onclick="toggleRepoDropdown(event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRepoDropdown(event)}">
               <div id="repo-tags" class="repo-tags"></div>
               <span id="repo-placeholder" class="repo-placeholder">Click to load repos...</span>
             </div>
@@ -951,7 +1042,7 @@
     <div class="s-section">
       <div class="s-label">Refresh &amp; Notifications</div>
       <div class="s-row">
-        <div class="s-field"><label>Auto-refresh</label>
+        <div class="s-field"><label for="refresh-interval">Auto-refresh</label>
           <select id="refresh-interval">
             <option value="0">Off</option><option value="60">1 min</option>
             <option value="120">2 min</option><option value="300" selected>5 min</option>
@@ -997,8 +1088,8 @@
         <button class="style-preset" data-preset="mono" onclick="setPreset('mono')"><span class="preset-dot" style="background:#a1a1aa"></span>Mono</button>
       </div>
       <div class="s-row">
-        <div class="s-field"><label>Custom accent</label><div style="display:flex;gap:6px;align-items:center"><input id="custom-accent" type="color" value="#e8b931" style="width:36px;height:28px;padding:1px;border:1px solid var(--border);border-radius:4px;background:var(--bg-2);cursor:pointer" onchange="setPreset('custom')" /><span id="accent-hex" style="font-family:var(--mono);font-size:10px;color:var(--text-2)">#e8b931</span></div></div>
-        <div class="s-field"><label>Font size</label>
+        <div class="s-field"><label for="custom-accent">Custom accent</label><div style="display:flex;gap:6px;align-items:center"><input id="custom-accent" type="color" value="#e8b931" style="width:36px;height:28px;padding:1px;border:1px solid var(--border);border-radius:4px;background:var(--bg-2);cursor:pointer" onchange="setPreset('custom')" /><span id="accent-hex" style="font-family:var(--mono);font-size:10px;color:var(--text-2)">#e8b931</span></div></div>
+        <div class="s-field"><label for="font-size-select">Font size</label>
           <select id="font-size-select" onchange="applyStylePrefs()">
             <option value="compact">Compact</option>
             <option value="default" selected>Default</option>
@@ -1007,10 +1098,10 @@
         </div>
       </div>
       <div class="s-row" style="margin-top:8px">
-        <div class="s-field"><label>Corner radius</label>
+        <div class="s-field"><label for="radius-slider">Corner radius</label>
           <input id="radius-slider" type="range" min="0" max="16" value="10" style="width:100%;accent-color:var(--accent)" oninput="applyStylePrefs()" />
         </div>
-        <div class="s-field"><label>Panel spacing</label>
+        <div class="s-field"><label for="gap-slider">Panel spacing</label>
           <input id="gap-slider" type="range" min="4" max="24" value="10" style="width:100%;accent-color:var(--accent)" oninput="applyStylePrefs()" />
         </div>
       </div>
@@ -1083,7 +1174,8 @@
     return rm > 0 ? h + 'h ' + rm + 'm' : h + 'h';
   }
 
-  function esc(s) { var d = document.createElement('div'); d.appendChild(document.createTextNode(String(s))); return d.innerHTML; }
+  var ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return ESC_MAP[c]; }); }
 
   function showUserAvatar(url, login) {
     var av = $('user-avatar'), name = $('user-name');
@@ -1116,29 +1208,61 @@
   }
 
   // Wrapper for all GitHub API calls. Rewrites URL + auth based on broker availability.
+  // The host helpers reject requests without this header. A custom header forces a
+  // CORS preflight, so other websites can't fire "simple" cross-site POSTs at them.
+  var HELPER_HEADER = { 'X-Dashboard': '1' };
+
   function ghFetch(url, opts) {
     opts = opts || {};
     if (useAuthBroker && url.indexOf('https://api.github.com/') === 0) {
       url = '/proxy/github/' + url.slice('https://api.github.com/'.length);
-      if (opts.headers) {
-        var clean = {};
-        for (var k in opts.headers) {
-          if (k.toLowerCase() !== 'authorization') clean[k] = opts.headers[k];
-        }
-        opts.headers = clean;
+      var clean = Object.assign({}, HELPER_HEADER);
+      for (var k in (opts.headers || {})) {
+        if (k.toLowerCase() !== 'authorization') clean[k] = opts.headers[k];
       }
+      opts = Object.assign({}, opts, { headers: clean });
     }
     return fetch(url, opts);
   }
+
+  // Browsers open only ~6 HTTP/1.1 connections per host. Fanning out one request per PR
+  // queues every other panel's calls behind them, so per-PR work runs a few at a time.
+  var PER_PR_CONCURRENCY = 4;
+  async function mapLimit(items, limit, fn) {
+    var results = new Array(items.length), next = 0;
+    async function worker() {
+      while (next < items.length) { var i = next++; results[i] = await fn(items[i], i); }
+    }
+    var workers = [];
+    for (var w = 0; w < Math.min(limit, items.length); w++) workers.push(worker());
+    await Promise.all(workers);
+    return results;
+  }
+
+  function ghToken() { return $('gh-token').value.trim(); }
+  function hasAuth() { return useAuthBroker || !!ghToken(); }
   function $(id) { return document.getElementById(id); }
   function html(el, c) { if (typeof el === 'string') el = $(el); if (el) el.innerHTML = c; }
 
+  // Lists re-render on every refresh; only the first render should play the entry animation.
+  function renderList(el, c) {
+    if (el.dataset.rendered) el.classList.add('settled');
+    el.innerHTML = c;
+    el.dataset.rendered = '1';
+  }
+
   // ── Theme ──
+  var systemLight = window.matchMedia('(prefers-color-scheme: light)');
+  systemLight.addEventListener('change', function() {
+    if ((localStorage.getItem('dd-theme') || 'system') === 'system') setTheme('system');
+  });
+
   function setTheme(t) {
     var r = document.documentElement;
-    if (t === 'dark') r.setAttribute('data-theme', 'dark');
-    else if (t === 'light') r.setAttribute('data-theme', 'light');
-    else r.removeAttribute('data-theme');
+    var resolved = t === 'system' ? (systemLight.matches ? 'light' : 'dark') : t;
+    r.setAttribute('data-theme', resolved);
+    var accent = $('custom-accent').value;
+    applyAccent(accent, hexToRgb(accent));
     document.querySelectorAll('.s-theme button').forEach(function(b) { b.classList.remove('active'); });
     var el = $('t-' + t); if (el) el.classList.add('active');
     localStorage.setItem('dd-theme', t);
@@ -1179,10 +1303,10 @@
 
   function applyAccent(hex, rgb) {
     var r = document.documentElement;
-    r.style.setProperty('--accent', hex);
-    r.style.setProperty('--accent-dim', 'rgba('+rgb+',0.12)');
     var isLight = r.getAttribute('data-theme') === 'light';
-    if (isLight) r.style.setProperty('--accent-dim', 'rgba('+rgb+',0.08)');
+    // Preset accents are tuned for dark backgrounds; on white they fall well below 4.5:1 text contrast.
+    r.style.setProperty('--accent', isLight ? 'color-mix(in srgb, ' + hex + ' 60%, #000)' : hex);
+    r.style.setProperty('--accent-dim', 'rgba(' + rgb + ',' + (isLight ? '0.10' : '0.12') + ')');
   }
 
   function applyStylePrefs() {
@@ -1227,16 +1351,28 @@
   }
 
   // ── Settings ──
-  function openSettings() { $('settings-overlay').classList.add('show'); loadNotifPrefs(); updateNotifPermUI(); }
-  function closeSettings() { $('settings-overlay').classList.remove('show'); }
+  var focusBeforeDialog = null;
+  function openSettings() {
+    focusBeforeDialog = document.activeElement;
+    $('settings-overlay').classList.add('show');
+    loadNotifPrefs(); updateNotifPermUI();
+    $('gh-token').focus();
+  }
+  function closeSettings() {
+    var overlay = $('settings-overlay');
+    if (!overlay.classList.contains('show')) return;
+    overlay.classList.remove('show');
+    if (focusBeforeDialog) focusBeforeDialog.focus();
+  }
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { hideConfirm(); closeQLPop(); closeSettings(); }
+    if (e.key !== 'Escape') return;
+    if ($('confirm-overlay').classList.contains('show')) hideConfirm();
+    else if (!$('ql-pop').hidden) closeQLPop();
+    else closeSettings();
   });
 
   // ── Quick Launch ──
   var QL_COLORS = ['blue', 'green', 'purple', 'orange', 'red', 'accent'];
-
-  function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
 
   function loadQuickLinks() {
     try { var a = JSON.parse(localStorage.getItem('dd-quicklinks') || '[]'); return Array.isArray(a) ? a : []; }
@@ -1258,8 +1394,8 @@
     loadQuickLinks().forEach(function(l, i) {
       if (!l || !l.label || !l.url) return;
       h += '<span class="ql-chip-wrap">' +
-             '<a class="ql-chip ql-' + qlColor(l.color) + '" href="' + escAttr(normalizeUrl(l.url)) +
-             '" target="_blank" rel="noopener" title="' + escAttr(normalizeUrl(l.url)) + '">' + esc(l.label) + '</a>' +
+             '<a class="ql-chip ql-' + qlColor(l.color) + '" href="' + esc(normalizeUrl(l.url)) +
+             '" target="_blank" rel="noopener" title="' + esc(normalizeUrl(l.url)) + '">' + esc(l.label) + '</a>' +
              '<button class="ql-chip-x" onclick="deleteQL(' + i + ')" title="Remove" aria-label="Remove link">&times;</button>' +
            '</span>';
     });
@@ -1345,9 +1481,11 @@
       $('n-comments').checked = p.comments !== false;
       $('n-reviews').checked = p.reviews !== false;
       $('n-merges').checked = p.merges !== false;
-      $('refresh-interval').value = String(p.interval || 300);
+      $('refresh-interval').value = String(refreshIntervalSec(p));
     } catch(e) {}
   }
+
+  function refreshIntervalSec(prefs) { return typeof prefs.interval === 'number' ? prefs.interval : 300; }
 
   function getNotifPrefs() {
     try { return JSON.parse(localStorage.getItem('dd-notif') || '{}'); } catch(e) { return {}; }
@@ -1357,7 +1495,7 @@
     maybeSave();
     localStorage.setItem('dd-notif', JSON.stringify({
       comments: $('n-comments').checked, reviews: $('n-reviews').checked,
-      merges: $('n-merges').checked, interval: parseInt($('refresh-interval').value) || 300
+      merges: $('n-merges').checked, interval: parseInt($('refresh-interval').value, 10)
     }));
     syncReposHidden();
     var msg = $('s-saved');
@@ -1367,8 +1505,8 @@
 
   // ── Test connection ──
   async function testGH() {
-    var token = $('gh-token').value.trim(), user = $('gh-user').value.trim(), el = $('gh-test');
-    if (!token) { el.className = 's-test-result err'; el.textContent = 'Enter token'; return; }
+    var token = ghToken(), user = $('gh-user').value.trim(), el = $('gh-test');
+    if (!hasAuth()) { el.className = 's-test-result err'; el.textContent = 'Enter token'; return; }
     el.className = 's-test-result'; el.textContent = 'Testing...';
     try {
       var res = await ghFetch('https://api.github.com/user', { headers: ghH(token) });
@@ -1448,7 +1586,7 @@
     try {
       var r = await fetch('/api/notify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, HELPER_HEADER),
         body: JSON.stringify({ title: 'GH-Dashboard test', body: 'If you see this in macOS Notification Center, native notifications work ✓', sound: true })
       });
       if (r.ok) nativeOk = true;
@@ -1476,17 +1614,14 @@
     }
   }
 
-  function sendNotif(title, body, tag, opts) {
+  async function sendNotif(title, body, tag, opts) {
     opts = opts || {};
-    // 1. In-app toast — always
     showInAppToast(title, body, opts.url, opts.kind || 'info');
-
-    // 2. Native macOS notification via the host-side notify-helper (preferred when running locally)
-    fireNativeNotif(title, body).catch(function() {});
-
-    // 3. Browser Notification API — fallback / additional surface
-    if (Notification.permission !== 'granted') return;
     if (!opts.force && document.visibilityState === 'visible') return;
+
+    if (await fireNativeNotif(title, body)) return;
+
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
     try {
       var n = new Notification(title, { body: body, tag: tag });
       n.onclick = function() { window.focus(); if (opts.url) window.open(opts.url, '_blank'); n.close(); };
@@ -1494,42 +1629,56 @@
     } catch(e) {}
   }
 
-  // POST to the host-side notify-helper. Silently no-ops if helper isn't running.
   async function fireNativeNotif(title, body) {
     try {
-      await fetch('/api/notify', {
+      var r = await fetch('/api/notify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, HELPER_HEADER),
         body: JSON.stringify({ title: title, body: body, sound: true })
       });
-    } catch(e) { /* helper not running — fine, browser path still works */ }
+      return r.ok;
+    } catch(e) { return false; }
   }
 
-  // ── In-app toast (for when the tab is visible) ──
+  // ── In-app toast ──
+  var TOAST_MS = 7000;
+
   function showInAppToast(title, body, url, kind) {
     var stack = $('toast-stack');
-    if (!stack) {
-      stack = document.createElement('div');
-      stack.id = 'toast-stack';
-      stack.style.cssText = 'position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:200;max-width:340px;pointer-events:none';
-      document.body.appendChild(stack);
-    }
     var toast = document.createElement('div');
-    var color = kind === 'success' ? 'var(--green)' : kind === 'warn' ? 'var(--orange)' : kind === 'error' ? 'var(--red)' : 'var(--accent)';
-    toast.style.cssText = 'background:var(--bg-1);border:1px solid var(--border);border-left:3px solid ' + color + ';border-radius:6px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:auto;cursor:' + (url ? 'pointer' : 'default') + ';animation:slideIn 0.25s ease;font-family:var(--mono);font-size:11px;color:var(--text-0)';
+    toast.className = 'toast toast-' + (kind || 'info') + (url ? ' toast-link' : '');
+
+    var text = document.createElement('div');
+    text.className = 'toast-text';
     var titleEl = document.createElement('div');
-    titleEl.style.cssText = 'font-weight:600;margin-bottom:2px;color:' + color;
+    titleEl.className = 'toast-title';
     titleEl.textContent = title;
-    toast.appendChild(titleEl);
+    text.appendChild(titleEl);
     if (body) {
       var bodyEl = document.createElement('div');
-      bodyEl.style.cssText = 'color:var(--text-1);font-size:10px;line-height:1.4';
+      bodyEl.className = 'toast-body';
       bodyEl.textContent = body;
-      toast.appendChild(bodyEl);
+      text.appendChild(bodyEl);
     }
-    if (url) toast.onclick = function() { window.open(url, '_blank'); toast.remove(); };
+    toast.appendChild(text);
+
+    var close = document.createElement('button');
+    close.className = 'toast-x';
+    close.setAttribute('aria-label', 'Dismiss');
+    close.innerHTML = '&times;';
+    toast.appendChild(close);
+
+    function dismiss() {
+      toast.classList.add('leaving');
+      setTimeout(function() { toast.remove(); }, 200);
+    }
+    close.onclick = function(e) { e.stopPropagation(); dismiss(); };
+    if (url) toast.onclick = function() { window.open(url, '_blank'); dismiss(); };
+
     stack.appendChild(toast);
-    setTimeout(function() { toast.style.transition = 'opacity 0.3s'; toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 300); }, 7000);
+    var timer = setTimeout(dismiss, TOAST_MS);
+    toast.onmouseenter = function() { clearTimeout(timer); };
+    toast.onmouseleave = function() { timer = setTimeout(dismiss, TOAST_MS / 2); };
   }
 
   // ── GitHub search ──
@@ -1541,10 +1690,46 @@
   }
 
   // ── PRs ──
+  var PR_EMPTY_TEXT = {
+    authored: 'No open PRs authored by you',
+    review: 'No reviews requested from you',
+    assigned: 'No open PRs assigned to you'
+  };
+  var PR_FILTER_EMPTY_TEXT = { open: 'No ready-for-review PRs here', draft: 'No draft PRs here' };
+
+  var PR_STATE_FILTERS = {
+    all: function() { return true; },
+    open: function(pr) { return !pr.draft; },
+    draft: function(pr) { return !!pr.draft; }
+  };
+  var prStateFilter = 'all';
+  try { prStateFilter = localStorage.getItem('dd-pr-filter') || 'all'; } catch(e) {}
+  if (!PR_STATE_FILTERS[prStateFilter]) prStateFilter = 'all';
+  document.querySelectorAll('.pr-filter-btn').forEach(function(b) {
+    b.setAttribute('aria-pressed', String(b.dataset.filter === prStateFilter));
+  });
+
+  function setPRStateFilter(f) {
+    prStateFilter = f;
+    try { localStorage.setItem('dd-pr-filter', f); } catch(e) {}
+    renderPRs();
+  }
+
+  function renderPRFilterCounts(items) {
+    Object.keys(PR_STATE_FILTERS).forEach(function(f) {
+      $('pf-count-' + f).textContent = items.filter(PR_STATE_FILTERS[f]).length;
+      document.querySelector('.pr-filter-btn[data-filter="' + f + '"]').setAttribute('aria-pressed', String(f === prStateFilter));
+    });
+  }
+
   function setPRTab(tab, el) {
     currentPRTab = tab;
-    el.closest('.panel').querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    el.closest('.panel').querySelectorAll('.tab').forEach(function(t) {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
     el.classList.add('active');
+    el.setAttribute('aria-selected', 'true');
     renderPRs();
   }
 
@@ -1580,26 +1765,21 @@
 
   function renderPRs() {
     var body = $('pr-body');
-    var authored = prData.authored || [];
-    var reviews = prData.review || [];
-
-    // When on "authored" tab: show authored PRs only
-    if (currentPRTab === 'authored') {
-      if (!authored.length) { html(body, '<div class="empty">No PRs</div>'); return; }
-      html(body, authored.map(function(pr) { return renderPRItem(pr); }).join(''));
-      return;
-    }
-
-    var items = prData[currentPRTab];
-    if (!items || !items.length) { html(body, '<div class="empty">No PRs</div>'); return; }
-    html(body, items.map(function(pr) { return renderPRItem(pr); }).join(''));
+    var tabItems = prData[currentPRTab] || [];
+    renderPRFilterCounts(tabItems);
+    if (!tabItems.length) { html(body, '<div class="empty">' + PR_EMPTY_TEXT[currentPRTab] + '</div>'); return; }
+    var items = tabItems.filter(PR_STATE_FILTERS[prStateFilter]);
+    if (!items.length) { html(body, '<div class="empty">' + PR_FILTER_EMPTY_TEXT[prStateFilter] + '</div>'); return; }
+    renderList(body, items.map(renderPRItem).join(''));
   }
 
   function renderPRItem(pr) {
     var repo = repoNameFromPR(pr);
+    var initials = (pr.user && pr.user.login) ? pr.user.login.slice(0, 2).toUpperCase() : '??';
     var av = (pr.user && pr.user.avatar_url)
-      ? '<img src="' + esc(pr.user.avatar_url) + '&amp;s=36" loading="lazy"/>'
-      : '<div class="pr-avatar-text">' + ((pr.user && pr.user.login) ? esc(pr.user.login.slice(0,2).toUpperCase()) : '??') + '</div>';
+      ? '<img src="' + esc(pr.user.avatar_url) + '&amp;s=36" loading="lazy" alt="" data-initials="' + esc(initials) + '"/>'
+      : '<div class="pr-avatar-text">' + esc(initials) + '</div>';
+    var muted = prMuted.has(muteKey(repo, pr.number));
 
     var readiness = computeMergeReadiness(pr);
     var checks = prChecks[pr.id];
@@ -1629,27 +1809,39 @@
     }
 
     var ageClass = prAgeClass(pr.created_at);
-    var timeHtml = '<span class="pr-time' + (ageClass ? ' ' + ageClass : '') + '">' + ago(pr.created_at) + '</span>';
+    var timeHtml = '<span class="pr-time' + (ageClass ? ' ' + ageClass : '') + '" title="Opened ' + esc(new Date(pr.created_at).toLocaleString()) + '">' + ago(pr.created_at) + '</span>';
 
     return '<div class="pr-item ' + readiness.cls + '">' +
-      '<a href="' + esc(pr.html_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:flex-start;gap:8px;text-decoration:none;color:inherit;flex:1;min-width:0">' +
+      '<a class="pr-link" href="' + esc(pr.html_url) + '" target="_blank" rel="noopener">' +
       '<div class="pr-avatar">' + av + '</div>' +
       '<div class="pr-main">' +
         '<div class="pr-title">' + esc(pr.title) + '</div>' +
         '<div class="pr-meta">' +
-          '<span>' + esc(repo) + ' #' + pr.number + '</span>' +
+          '<span class="pr-ref">' + esc(repo) + ' #' + pr.number + '</span>' +
+          timeHtml +
           checkPill +
           approvalPill +
+          facesHtml +
         '</div>' +
       '</div></a>' +
       '<div class="pr-right">' +
         '<span class="merge-status ' + readiness.badge + '">' + readiness.label + '</span>' +
-        timeHtml +
-        facesHtml +
-        '<button class="pr-sub' + (!prMuted.has(muteKey(repo, pr.number)) ? ' subscribed' : '') + '" data-id="' + pr.id + '" data-num="' + pr.number + '" data-repo="' + esc(repo) + '">' + (!prMuted.has(muteKey(repo, pr.number)) ? 'Unwatch' : 'Watch') + '</button>' +
-        '<button class="pr-close" data-num="' + pr.number + '" data-repo="' + esc(repo) + '" data-title="' + esc(pr.title) + '">Close</button>' +
+        '<div class="pr-actions">' +
+          '<button class="pr-sub' + (muted ? ' muted' : '') + '" data-id="' + pr.id + '" data-num="' + pr.number + '" data-repo="' + esc(repo) + '"' + (muted ? ' title="Notifications muted for this PR"' : '') + '>' + (muted ? 'Watch' : 'Unwatch') + '</button>' +
+          '<button class="pr-close" data-num="' + pr.number + '" data-repo="' + esc(repo) + '" data-title="' + esc(pr.title) + '">Close</button>' +
+        '</div>' +
       '</div></div>';
   }
+
+  document.addEventListener('error', function(e) {
+    var img = e.target;
+    if (img.id === 'user-avatar') { img.style.display = 'none'; return; }
+    if (!img.matches || !img.matches('.pr-avatar img')) return;
+    var fallback = document.createElement('div');
+    fallback.className = 'pr-avatar-text';
+    fallback.textContent = img.dataset.initials || '??';
+    img.replaceWith(fallback);
+  }, true);
 
   // ── Delegated click handlers ──
   document.addEventListener('click', function(e) {
@@ -1667,11 +1859,12 @@
   });
 
   // ── Main PR load ──
-  async function loadGH() {
-    var token = $('gh-token').value.trim(), user = $('gh-user').value.trim(), body = $('pr-body');
+  function loadGH() { return withLoading('panel-prs', fetchPRs); }
+  async function fetchPRs() {
+    var token = ghToken(), user = $('gh-user').value.trim(), body = $('pr-body');
     // Broker mode: token isn't needed in the browser; user is auto-fetched at startup.
-    if ((!token && !useAuthBroker) || !user) { html(body, '<div class="empty">Configure GitHub in settings</div>'); return; }
-    html(body, skeletonHTML(3));
+    if (!hasAuth() || !user) { html(body, '<div class="empty">Configure GitHub in settings</div>'); return; }
+    if (!allPRs().length) html(body, skeletonHTML(3));
     var h = ghH(token);
     try {
       var r = await Promise.all([
@@ -1681,28 +1874,25 @@
         ghFetch('https://api.github.com/user', { headers: h })
       ]);
 
-      prData.authored = r[0].items;
-      prData.review = r[1].items;
-      prData.assigned = r[2].items;
+      prData.authored = r[0].items.filter(isShownPR);
+      prData.review = r[1].items.filter(isShownPR);
+      prData.assigned = r[2].items.filter(isShownPR);
 
       if (r[3] && r[3].ok) {
         try { var ud = await r[3].json(); if (ud.avatar_url) showUserAvatar(ud.avatar_url, ud.login); } catch(e) {}
       }
 
-      var allPRItems = [].concat(r[0].items, r[1].items, r[2].items);
-      var ids = new Set();
+      var allPRItems = allPRs();
       allPRItems.forEach(function(p) {
-        ids.add(p.id);
         if (!prMuted.has(muteKey(repoNameFromPR(p), p.number))) prSubs[p.id] = true;
       });
-      $('pr-badge').textContent = ids.size;
+      updatePRBadge();
 
       renderPRs();
       maybeSave();
 
       // Background tasks. loadNotifs/loadAchievements are driven by loadAll.
-      autoWatchPRs(allPRItems, h);
-      loadPRChecks(r[0].items, h);
+      loadPRChecks(allPRItems, h, user);
       loadPRReviews(allPRItems, h);
       loadMergeQueue();
       loadCommitHistory();
@@ -1711,23 +1901,47 @@
     } catch(e) { html(body, '<div class="err-msg">' + esc(e.message) + '</div>'); }
 
     lastRefresh = Date.now();
-    var now = new Date();
-    $('refresh-time').textContent = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    renderRefreshAge();
+  }
+
+  // GitHub search is eventually consistent: a PR closed or merged minutes ago can still
+  // match is:open. Each PR's real state comes from its own endpoint in loadPRChecks.
+  var closedPRs = new Set();
+  function isShownPR(pr) { return !closedPRs.has(muteKey(repoNameFromPR(pr), pr.number)); }
+
+  function allPRs() {
+    var byId = new Map();
+    [].concat(prData.authored, prData.review, prData.assigned).forEach(function(pr) { if (pr) byId.set(pr.id, pr); });
+    return Array.from(byId.values());
+  }
+
+  function updatePRBadge() { $('pr-badge').textContent = allPRs().length; }
+
+  function hidePR(repo, num) {
+    closedPRs.add(muteKey(repo, num));
+    prData.authored = prData.authored.filter(isShownPR);
+    prData.review = prData.review.filter(isShownPR);
+    prData.assigned = prData.assigned.filter(isShownPR);
+    updatePRBadge();
   }
 
   // ── PR Check statuses ──
-  async function loadPRChecks(prs, h) {
-    for (var i = 0; i < prs.length; i++) {
-      var pr = prs[i];
+  // Failures already present when the page opens are recorded, not announced.
+  var failingAlerted = new Set();
+  var checksPrimed = false;
+
+  async function loadPRChecks(prs, h, user) {
+    await mapLimit(prs, PER_PR_CONCURRENCY, async function(pr) {
       var repo = repoNameFromPR(pr);
       try {
         var prRes = await ghFetch('https://api.github.com/repos/' + repo + '/pulls/' + pr.number, { headers: h });
-        if (!prRes.ok) { prChecks[pr.id] = { color: 'gray', label: prRes.status === 401 ? 'auth' : 'error' }; continue; }
+        if (!prRes.ok) { prChecks[pr.id] = { color: 'gray', label: prRes.status === 401 ? 'auth' : 'error' }; return; }
         var prDetail = await prRes.json();
+        if (prDetail.state !== 'open') { hidePR(repo, pr.number); return; }
         var sha = prDetail.head && prDetail.head.sha;
-        if (!sha) { prChecks[pr.id] = { color: 'gray', label: 'no checks' }; continue; }
+        if (!sha) { prChecks[pr.id] = { color: 'gray', label: 'no checks' }; return; }
         var cRes = await ghFetch('https://api.github.com/repos/' + repo + '/commits/' + sha + '/check-runs?per_page=100', { headers: h });
-        if (!cRes.ok) { prChecks[pr.id] = { color: 'gray', label: 'error' }; continue; }
+        if (!cRes.ok) { prChecks[pr.id] = { color: 'gray', label: 'error' }; return; }
         var cd = await cRes.json();
         var total = (cd.check_runs || []).length;
         var passed = 0, failed = 0;
@@ -1740,25 +1954,28 @@
         else if (total > 0) prChecks[pr.id] = { color: 'orange', label: passed + '/' + total };
         else prChecks[pr.id] = { color: 'gray', label: 'no checks' };
 
-        var prefs = getNotifPrefs();
-        if (failed > 0 && prefs.merges !== false && !prMuted.has(muteKey(repo, pr.number))) {
-          sendNotif('Checks failing: ' + pr.title, repo, 'chk-' + pr.id, { url: pr.html_url, kind: 'error', force: true });
+        var alertKey = pr.id + '@' + sha;
+        var mine = pr.user && pr.user.login.toLowerCase() === user.toLowerCase();
+        if (failed > 0 && mine && !failingAlerted.has(alertKey) && getNotifPrefs().merges !== false && !prMuted.has(muteKey(repo, pr.number))) {
+          failingAlerted.add(alertKey);
+          if (checksPrimed) sendNotif('Checks failing: ' + pr.title, repo, 'chk-' + pr.id, { url: pr.html_url, kind: 'error', force: true });
         }
       } catch(e) { prChecks[pr.id] = { color: 'gray', label: 'error' }; }
-    }
+    });
+    checksPrimed = true;
     renderPRs();
     computeAttention();
   }
 
   // ── PR Reviews ──
   async function loadPRReviews(prs, h) {
-    for (var i = 0; i < prs.length; i++) {
-      var pr = prs[i];
-      if (pr.draft) continue;
+    var unique = new Map();
+    prs.forEach(function(pr) { if (!pr.draft) unique.set(pr.id, pr); });
+    await mapLimit(Array.from(unique.values()), PER_PR_CONCURRENCY, async function(pr) {
       var repo = repoNameFromPR(pr);
       try {
         var res = await ghFetch('https://api.github.com/repos/' + repo + '/pulls/' + pr.number + '/reviews?per_page=100', { headers: h });
-        if (!res.ok) continue;
+        if (!res.ok) return;
         var reviews = await res.json();
 
         // Collapse to latest review state per reviewer
@@ -1789,7 +2006,7 @@
 
         prReviews[pr.id] = { approved: approved, changesRequested: changesRequested, reviewers: reviewers };
       } catch(e) {}
-    }
+    });
     renderPRs();
     computeAttention();
   }
@@ -1804,11 +2021,7 @@
     var readyToMerge = 0;
     var commentCount = actData.filter(function(n) { return n.reason === 'comment'; }).length;
 
-    var allPRs = [].concat(prData.authored, prData.review, prData.assigned);
-    var seen = new Set();
-    allPRs.forEach(function(pr) {
-      if (!pr || seen.has(pr.id)) return;
-      seen.add(pr.id);
+    allPRs().forEach(function(pr) {
       var readiness = computeMergeReadiness(pr);
       if (readiness.badge === 'merge-blocked' && readiness.cls === 'changes-requested') changesReq++;
       else if (readiness.badge === 'merge-waiting' || readiness.badge === 'merge-almost') needsReview++;
@@ -1834,21 +2047,29 @@
   }
 
   // ── Merge Queue ──
-  async function loadMergeQueue() {
-    var token = $('gh-token').value.trim();
+  var MQ_STATES = {
+    QUEUED:          { pill: 'pill-gray',   label: 'Queued' },
+    AWAITING_CHECKS: { pill: 'pill-blue',   label: 'Running checks' },
+    MERGEABLE:       { pill: 'pill-green',  label: 'Mergeable' },
+    LOCKED:          { pill: 'pill-green',  label: 'Merging' },
+    UNMERGEABLE:     { pill: 'pill-red',    label: 'Failing' }
+  };
+
+  function loadMergeQueue() { return withLoading('panel-mergeq', fetchMergeQueue); }
+  async function fetchMergeQueue() {
     var repos = $('gh-repos').value.trim();
     var body = $('mq-body');
-    if (!token || !repos) { html(body, '<div class="empty">No PRs in merge queue</div>'); return; }
+    if (!hasAuth()) { html(body, '<div class="empty">Configure GitHub in settings</div>'); return; }
+    if (!repos) { html(body, '<div class="empty">Pick repos to watch in settings</div>'); return; }
 
     var repoList = repos.split(',').map(function(r) { return r.trim(); }).filter(Boolean);
     var queued = [];
-    var avgCiMinutes = 5;
 
     // Build a single GraphQL query batching all repos as aliased fields
     var parts = repoList.map(function(repo, i) {
+      if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return null;
       var seg = repo.split('/');
-      if (seg.length !== 2) return null;
-      return 'r' + i + ': repository(owner:"' + seg[0] + '", name:"' + seg[1] + '"){nameWithOwner mergeQueue{entries(first:30){nodes{position state enqueuedAt estimatedTimeToMerge solo jump pullRequest{number title author{login} url headRefName}}}}}';
+      return 'r' + i + ': repository(owner:"' + seg[0] + '", name:"' + seg[1] + '"){nameWithOwner defaultBranchRef{name} mergeQueue{entries(first:30){nodes{position state enqueuedAt estimatedTimeToMerge solo jump pullRequest{number title author{login} url headRefName}}}}}';
     }).filter(Boolean);
 
     if (!parts.length) { html(body, '<div class="empty">No PRs in merge queue</div>'); return; }
@@ -1858,7 +2079,7 @@
     try {
       var res = await ghFetch('https://api.github.com/graphql', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, ghH(ghToken())),
         body: JSON.stringify({ query: query })
       });
       if (!res.ok) { html(body, '<div class="empty">Could not load merge queue</div>'); return; }
@@ -1871,6 +2092,7 @@
           if (!n || !n.pullRequest) return;
           queued.push({
             repo: repo.nameWithOwner,
+            branch: (repo.defaultBranchRef && repo.defaultBranchRef.name) || 'main',
             number: n.pullRequest.number,
             title: n.pullRequest.title,
             author: n.pullRequest.author && n.pullRequest.author.login,
@@ -1900,22 +2122,7 @@
 
     html(body, queued.map(function(pr, idx) {
       var pos = pr.position || (idx + 1);
-      var stateLower = (pr.state || '').toLowerCase();
-      var statusCls, statusLabel, barWidth, barColor;
-
-      if (stateLower === 'mergeable' || idx === 0) {
-        statusCls = 'mq-status-running';
-        statusLabel = stateLower === 'mergeable' ? 'Ready to merge' : 'Running checks...';
-        barWidth = 85; barColor = 'green';
-      } else if (stateLower === 'unmergeable' || stateLower === 'failed') {
-        statusCls = 'mq-status-waiting';
-        statusLabel = 'Failed';
-        barWidth = 0; barColor = 'orange';
-      } else {
-        statusCls = 'mq-status-queued';
-        statusLabel = pos === 2 ? 'Queued — waiting for #1' : 'Queued — position #' + pos;
-        barWidth = Math.max(5, 30 - (pos - 1) * 5); barColor = 'blue';
-      }
+      var status = MQ_STATES[pr.state] || { pill: 'pill-gray', label: (pr.state || 'unknown').toLowerCase() };
 
       // ETA: use GitHub's GraphQL estimate when present. It is often null
        // (depends on repo settings / GitHub plan), in which case we DO NOT show a
@@ -1935,24 +2142,22 @@
           etaTooltip = 'ETA from GitHub GraphQL (rolling average). For exact value see the queue page on github.com.';
         }
       } else if (elapsedMs > 0) {
-        etaLabel = (idx === 0 ? 'running ' : 'queued ') + formatDuration(elapsedMs);
+        etaLabel = 'in queue ' + formatDuration(elapsedMs);
         etaTooltip = 'GitHub did not return an ETA estimate for this entry. Showing time-in-queue instead. Click through to github.com for live ETA.';
       } else {
         etaLabel = '';
       }
 
-      var queuedFor = '';
       var authorLine = pr.author ? ' · @' + esc(pr.author) : '';
 
-      var queueUrl = 'https://github.com/' + pr.repo + '/queue/main';
+      var queueUrl = 'https://github.com/' + pr.repo + '/queue/' + encodeURIComponent(pr.branch);
       return '<a class="mq-item" href="' + esc(queueUrl) + '" target="_blank" rel="noopener" title="Open queue page on github.com" style="text-decoration:none;color:inherit;display:block">' +
         '<div class="mq-top">' +
           '<span class="mq-title">' + esc(pr.repo) + ' #' + pr.number + ' ' + esc(pr.title) + authorLine + '</span>' +
           '<span class="mq-pos">#' + pos + '</span>' +
         '</div>' +
-        '<div class="mq-bar-wrap"><div class="mq-bar ' + barColor + '" style="width:' + barWidth + '%"></div></div>' +
         '<div class="mq-detail">' +
-          '<span class="' + statusCls + '">' + statusLabel + queuedFor + '</span>' +
+          '<span class="pill ' + status.pill + '"><span class="pill-dot"></span>' + status.label + '</span>' +
           (etaLabel ? '<span class="mq-eta" title="' + esc(etaTooltip) + '">' + esc(etaLabel) + '</span>' : '') +
         '</div>' +
       '</a>';
@@ -1960,20 +2165,27 @@
   }
 
   // ── Commit history heatmap (GraphQL contributionsCollection) ──
+  var HEATMAP_DAYS = 84;
+  function localDayKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
   async function loadCommitHistory() {
-    var token = $('gh-token').value.trim();
+    var token = ghToken();
     var user = $('gh-user').value.trim();
-    if (!token || !user) return;
+    if (!hasAuth() || !user) return;
 
     var to = new Date();
-    var from = new Date(to.getTime() - 83 * 86400000);
+    var from = new Date(to.getTime() - (HEATMAP_DAYS - 1) * 86400000);
     from.setHours(0, 0, 0, 0);
+    var fromKey = localDayKey(from);
+    var mergedQuery = ghSearch('is:pr author:' + user + ' is:merged merged:>=' + fromKey, ghH(token))
+      .then(function(r) { return r.total; }, function() { return null; });
 
-    var query = 'query($login:String!,$from:DateTime!,$to:DateTime!){user(login:$login){followers{totalCount} contributionsCollection(from:$from,to:$to){totalCommitContributions totalIssueContributions totalPullRequestContributions totalPullRequestReviewContributions commitContributionsByRepository(maxRepositories:5){repository{nameWithOwner} contributions{totalCount}} pullRequestContributions(first:100){nodes{pullRequest{merged mergedAt}}} contributionCalendar{weeks{contributionDays{date contributionCount}}}}}}';
+    var query = 'query($login:String!,$from:DateTime!,$to:DateTime!){user(login:$login){followers{totalCount} contributionsCollection(from:$from,to:$to){totalCommitContributions totalIssueContributions totalPullRequestContributions totalPullRequestReviewContributions commitContributionsByRepository(maxRepositories:5){repository{nameWithOwner} contributions{totalCount}} contributionCalendar{weeks{contributionDays{date contributionCount}}}}}}';
 
     var commitsByDay = {};
-    var totalCommits = 0;
-    var mergedPRCount = 0;
+    var totalContributions = 0;
 
     try {
       var res = await ghFetch('https://api.github.com/graphql', {
@@ -1986,24 +2198,21 @@
       var cc = data && data.data && data.data.user && data.data.user.contributionsCollection;
       if (!cc) return;
 
-      totalCommits = cc.totalCommitContributions || 0;
+      // The calendar counts private-repo work; the per-type totals (totalCommitContributions etc.)
+      // exclude anything GitHub marks restricted, which can be nearly all of it for org repos.
+      // `from` is local midnight, so GitHub may also return the previous UTC day; only drawn days count.
       var orderedDays = [];
       (cc.contributionCalendar.weeks || []).forEach(function(w) {
         (w.contributionDays || []).forEach(function(d) {
+          if (d.date < fromKey) return;
           commitsByDay[d.date] = d.contributionCount;
+          totalContributions += d.contributionCount;
           orderedDays.push(d);
         });
       });
-      var prNodes = (cc.pullRequestContributions && cc.pullRequestContributions.nodes) || [];
-      prNodes.forEach(function(n) {
-        if (n.pullRequest && n.pullRequest.merged && n.pullRequest.mergedAt) {
-          var md = new Date(n.pullRequest.mergedAt);
-          if (md >= from && md <= to) mergedPRCount++;
-        }
-      });
 
       // Streaks
-      var todayKey = (new Date()).toISOString().slice(0, 10);
+      var todayKey = localDayKey(new Date());
       var current = 0, longest = 0, run = 0;
       orderedDays.forEach(function(d) {
         if (d.contributionCount > 0) { run++; if (run > longest) longest = run; }
@@ -2035,34 +2244,34 @@
       computeAttention();
     } catch(e) { return; }
 
-    $('commit-count').textContent = totalCommits;
-    $('merged-count').textContent = mergedPRCount;
+    $('commit-count').textContent = totalContributions.toLocaleString();
+    var mergedPRCount = await mergedQuery;
+    $('merged-count').textContent = mergedPRCount == null ? '--' : mergedPRCount.toLocaleString();
 
     var counts = Object.values(commitsByDay).filter(function(c) { return c > 0; });
     var maxCommits = counts.length ? Math.max.apply(null, counts) : 1;
     var today = new Date();
     today.setHours(0, 0, 0, 0);
-    function dayKey(d) {
-      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    }
     var todayDow = (today.getDay() + 6) % 7;
 
     var heatmapEl = $('heatmap');
     if (!heatmapEl) return;
     while (heatmapEl.firstChild) heatmapEl.removeChild(heatmapEl.firstChild);
 
-    for (var week = 11; week >= 0; week--) {
+    var oldestWeek = Math.ceil((HEATMAP_DAYS - 1 - todayDow) / 7);
+    for (var week = oldestWeek; week >= 0; week--) {
       var colEl = document.createElement('div');
       colEl.className = 'heatmap-col';
       for (var row = 0; row < 7; row++) {
         var cellEl = document.createElement('div');
         cellEl.className = 'heatmap-cell';
         var offset = week * 7 + (todayDow - row);
-        if (offset < 0) {
+        if (offset < 0 || offset >= HEATMAP_DAYS) {
           cellEl.style.visibility = 'hidden';
         } else {
           var d = new Date(today.getTime() - offset * 86400000);
-          var count = commitsByDay[dayKey(d)] || 0;
+          var count = commitsByDay[localDayKey(d)] || 0;
+          cellEl.title = localDayKey(d) + ': ' + count + (count === 1 ? ' contribution' : ' contributions');
           if (count > 0) {
             var level = count >= maxCommits * 0.75 ? 4 : count >= maxCommits * 0.5 ? 3 : count >= maxCommits * 0.25 ? 2 : 1;
             cellEl.classList.add('l' + level);
@@ -2092,8 +2301,8 @@
   }
 
   async function toggleSub(prId, prNum, repo) {
-    var token = $('gh-token').value.trim();
-    if (!token) return;
+    var token = ghToken();
+    if (!hasAuth()) return;
     var h = ghH(token);
     var key = muteKey(repo, prNum);
     var isSubbed = !!prSubs[prId] && !prMuted.has(key);
@@ -2116,7 +2325,7 @@
       var body = isSubbed
         ? { subscribed: false, ignored: true }   // unwatch = mute
         : { subscribed: true, ignored: false };  // watch
-      var res = await fetch(subUrl, {
+      var res = await ghFetch(subUrl, {
         method: 'PUT',
         headers: Object.assign({ 'Content-Type': 'application/json' }, h),
         body: JSON.stringify(body)
@@ -2134,24 +2343,6 @@
     }
   }
 
-  async function autoWatchPRs(prs, h) {
-    var seen = new Set();
-    await Promise.all(prs.map(async function(pr) {
-      if (!pr || seen.has(pr.id)) return;
-      seen.add(pr.id);
-      if (prSubs[pr.id]) return;
-      var repo = repoNameFromPR(pr);
-      if (prMuted.has(muteKey(repo, pr.number))) return; // user explicitly unwatched — respect that
-      try {
-        var r = await ghFetch('https://api.github.com/repos/' + repo + '/issues/' + pr.number + '/subscription', {
-          method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, h),
-          body: JSON.stringify({ subscribed: true, ignored: false })
-        });
-        if (r.ok) prSubs[pr.id] = true;
-      } catch(e) {}
-    }));
-  }
-
   // ── Close PR ──
   var closePR = { num: 0, repo: '', title: '' };
   function confirmClose(num, repo, title) {
@@ -2159,45 +2350,47 @@
     html('confirm-msg', 'Close <code>' + esc(repo) + '#' + num + '</code>?<br><span style="color:var(--text-2)">' + esc(title) + '</span>');
     $('confirm-overlay').classList.add('show');
     $('confirm-ok').onclick = doClosePR;
+    document.querySelector('#confirm-overlay .btn-cancel').focus();
   }
   function hideConfirm() { $('confirm-overlay').classList.remove('show'); }
   async function doClosePR() {
-    var token = $('gh-token').value.trim();
-    if (!token) return;
+    var token = ghToken();
+    if (!hasAuth()) return;
     $('confirm-ok').textContent = 'Closing...';
     try {
       var res = await ghFetch('https://api.github.com/repos/' + closePR.repo + '/pulls/' + closePR.num, {
         method: 'PATCH', headers: Object.assign({ 'Content-Type': 'application/json' }, ghH(token)),
         body: JSON.stringify({ state: 'closed' })
       });
-      if (!res.ok) { var d = await res.json(); alert('Failed: ' + (d.message || res.status)); }
-      else {
-        var matchClosed = function(pr) {
-          return !(repoNameFromPR(pr) === closePR.repo && pr.number === closePR.num);
-        };
-        prData.authored = (prData.authored || []).filter(matchClosed);
-        prData.review = (prData.review || []).filter(matchClosed);
-        prData.assigned = (prData.assigned || []).filter(matchClosed);
+      if (!res.ok) {
+        var d = await res.json().catch(function() { return {}; });
+        showInAppToast('Could not close PR', d.message || ('HTTP ' + res.status), null, 'error');
+      } else {
+        hidePR(closePR.repo, closePR.num);
         renderPRs();
-        setTimeout(loadGH, 5000);
+        computeAttention();
+        showInAppToast('PR closed', closePR.repo + '#' + closePR.num, null, 'success');
       }
-    } catch(e) { alert('Error: ' + e.message); }
+    } catch(e) { showInAppToast('Could not close PR', e.message, null, 'error'); }
     $('confirm-ok').textContent = 'Close PR';
     hideConfirm();
   }
 
   // ── Notifications ──
   var notifEventCache = {};
+  var prStateCache = {};
+  var notifsPrimed = false;
+
+  // A thread keeps its id for the life of the PR; updated_at moves on every new event.
+  function notifEventKey(n) { return n.id + '@' + n.updated_at; }
 
   function isGitHubApiUrl(u) {
     return typeof u === 'string' && u.indexOf('https://api.github.com/') === 0;
   }
 
-  // Fire merged/closed alert using cached PR state from the verified step.
-  // No API call here — we already fetched during author-verification.
-  function announceStateChange(n, h, subtitle, prUrl) {
+  function announceStateChange(n, subtitle, prUrl) {
     var url = (n.subject && n.subject.url) || '';
-    var cached = notifEventCache['__pr__' + url];
+    var cached = prStateCache[url + '@' + n.updated_at];
     if (!cached) return;
     var tag = 'state-' + n.id;
     if (cached.merged) {
@@ -2212,7 +2405,7 @@
     if (!isGitHubApiUrl(url)) return null;
     if (notifEventCache[url]) return notifEventCache[url];
     try {
-      var res = await fetch(url, { headers: h });
+      var res = await ghFetch(url, { headers: h });
       if (!res.ok) return null;
       var data = await res.json();
       var info = null;
@@ -2232,9 +2425,10 @@
     } catch(e) { return null; }
   }
 
-  async function loadNotifs() {
-    var token = $('gh-token').value.trim(), body = $('act-body');
-    if (!token) { html(body, '<div class="empty">Configure GitHub in settings</div>'); return; }
+  function loadNotifs() { return withLoading('panel-notifs', fetchNotifs); }
+  async function fetchNotifs() {
+    var token = ghToken(), body = $('act-body');
+    if (!hasAuth()) { html(body, '<div class="empty">Configure GitHub in settings</div>'); return; }
     if (!actData.length) html(body, skeletonHTML(3));
     var h = ghH(token);
     try {
@@ -2245,29 +2439,39 @@
       var me = ($('gh-user').value || '').trim().toLowerCase();
       var prCandidates = allNotifs.filter(function(n) { return n.subject && n.subject.type === 'PullRequest'; });
 
-      // Verify PR author == current user before keeping
-      var verified = await Promise.all(prCandidates.map(async function(n) {
+      // Verify PR author == current user before keeping. A thread's updated_at only
+      // moves when something happens on the PR, so the PR is re-fetched only then.
+      var verified = await mapLimit(prCandidates, PER_PR_CONCURRENCY, async function(n) {
         var url = (n.subject && n.subject.url) || '';
         if (!isGitHubApiUrl(url)) return null;
-        // Cache PR data per poll: author + current merged/state (used by announceStateChange)
         try {
-          var pr = await fetch(url, { headers: h }).then(function(r) { return r.ok ? r.json() : null; });
-          var author = pr && pr.user && pr.user.login ? pr.user.login.toLowerCase() : '';
-          notifEventCache['__author__' + url] = author;
-          notifEventCache['__pr__' + url] = pr ? { merged: !!pr.merged, state: pr.state } : null;
-          return author === me ? n : null;
+          var cacheKey = url + '@' + n.updated_at;
+          if (!(cacheKey in prStateCache)) {
+            var pr = await ghFetch(url, { headers: h }).then(function(r) { return r.ok ? r.json() : null; });
+            if (!pr) return null;
+            prStateCache[cacheKey] = {
+              author: pr.user && pr.user.login ? pr.user.login.toLowerCase() : '',
+              merged: !!pr.merged,
+              state: pr.state
+            };
+          }
+          return prStateCache[cacheKey].author === me ? n : null;
         } catch(e) { return null; }
-      }));
+      });
       var notifs = verified.filter(Boolean).filter(function(n) {
         var key = muteKeyFromSubjectUrl(n.subject && n.subject.url);
         return !key || !prMuted.has(key);
       });
-      if (!notifs.length) { html(body, '<div class="empty">No notifications on your PRs</div>'); actData = []; computeAttention(); return; }
+      $('act-badge').textContent = notifs.filter(function(n) { return n.unread; }).length;
+      if (!notifs.length) {
+        html(body, '<div class="empty">No notifications on your PRs</div>');
+        actData = []; notifsPrimed = true; computeAttention(); return;
+      }
 
       // Enrich notifications with actual review/comment data in parallel
-      var enriched = await Promise.all(notifs.map(function(n) {
+      var enriched = await mapLimit(notifs, PER_PR_CONCURRENCY, function(n) {
         return classifyNotif(n, h).then(function(info) { return { n: n, info: info }; });
-      }));
+      });
 
       actData = notifs;
       $('notif-ind').style.display = notifs.some(function(n) { return n.unread; }) ? 'inline-block' : 'none';
@@ -2275,10 +2479,9 @@
       // Push-notification dispatch — fires only for genuinely new notifications,
       // and uses the *classified* info so approvals (reason=author) are detected correctly.
       var prefs = getNotifPrefs();
-      var firstRun = prevNotifIds.size === 0;
       enriched.forEach(function(item) {
         var n = item.n, info = item.info;
-        if (firstRun || prevNotifIds.has(n.id)) return;
+        if (!notifsPrimed || prevNotifIds.has(notifEventKey(n))) return;
         var title = (n.subject && n.subject.title) || '';
         var repoName = (n.repository && n.repository.full_name) || '';
         var rawUrl = (n.subject && n.subject.url) || '';
@@ -2298,19 +2501,18 @@
         } else if (n.reason === 'mention') {
           sendNotif('You were mentioned', subtitle, 'n-' + n.id, { url: prUrl, kind: 'warn', force: true });
         } else if (n.reason === 'state_change' || n.reason === 'author') {
-          // For author/state_change we may not know yet if PR was merged or just commented on;
-          // announceStateChange fetches the PR and only fires if state is now closed/merged.
           var stateKey = muteKeyFromSubjectUrl(n.subject && n.subject.url);
           if (prefs.merges !== false && (!stateKey || !prMuted.has(stateKey))) {
-            announceStateChange(n, h, subtitle, prUrl);
+            announceStateChange(n, subtitle, prUrl);
           }
         }
       });
-      prevNotifIds = new Set(notifs.map(function(n) { return n.id; }));
+      prevNotifIds = new Set(notifs.map(notifEventKey));
+      notifsPrimed = true;
 
       computeAttention();
 
-      html(body, enriched.map(function(item) {
+      renderList(body, enriched.map(function(item) {
         var n = item.n, info = item.info;
         var repo = (n.repository && n.repository.full_name) || '';
         var rawUrl = (n.subject && n.subject.url) || '';
@@ -2325,7 +2527,7 @@
         else if (n.reason === 'ci_activity') { cls = 'act-other'; sym = '&#9881;'; label = 'CI update'; }
         else if (n.reason === 'author') { cls = 'act-review'; sym = '&#9881;'; label = 'activity on your PR'; }
         return '<a class="act-item' + (n.unread ? ' unread' : '') + '" href="' + esc(url) + '" target="_blank" rel="noopener">' +
-          '<div class="act-dot ' + cls + '">' + sym + '</div>' +
+          '<div class="act-dot ' + cls + '" aria-hidden="true">' + sym + '</div>' +
           '<div class="act-main">' +
           '<div class="act-title">' + esc((n.subject && n.subject.title) || 'Notification') + '</div>' +
           '<div class="act-meta">' + esc(repo) + ' &middot; ' + label + ' &middot; ' + ago(n.updated_at) + '</div>' +
@@ -2336,9 +2538,28 @@
   }
 
   // ── Refresh ──
+  function renderRefreshAge() {
+    if (!lastRefresh) return;
+    var mins = Math.floor((Date.now() - lastRefresh) / 60000);
+    var interval = refreshIntervalSec(getNotifPrefs()) / 60;
+    var stale = mins > Math.max(interval * 2, 10);
+    $('refresh-time').textContent = mins < 1 ? 'Updated just now' : 'Updated ' + ago(lastRefresh) + ' ago';
+    $('refresh-time').parentElement.title = 'Last refresh ' + new Date(lastRefresh).toLocaleTimeString();
+    $('hdr-status').classList.toggle('stale', stale);
+    $('hdr-status').classList.toggle('fresh', !stale);
+  }
+  setInterval(renderRefreshAge, 30000);
+
+  async function withLoading(panelId, load) {
+    var btn = document.querySelector('#' + panelId + ' .p-refresh');
+    btn.classList.add('spinning'); btn.setAttribute('aria-busy', 'true');
+    try { await load(); }
+    finally { btn.classList.remove('spinning'); btn.setAttribute('aria-busy', 'false'); }
+  }
+
   function setupRefresh() {
     if (refreshTimer) clearInterval(refreshTimer);
-    var p = getNotifPrefs(), iv = (p.interval || 300) * 1000;
+    var iv = refreshIntervalSec(getNotifPrefs()) * 1000;
     if (iv <= 0) return;
     refreshTimer = setInterval(function() { if (document.visibilityState !== 'hidden') loadAll(); }, iv);
   }
@@ -2371,14 +2592,12 @@
         var src = img.getAttribute('src') || '';
         var alt = img.getAttribute('alt') || '';
         var name = alt.replace(/^Achievement:\s*/, '').trim();
-        if (!name) {
-          var slug = (a.href.match(/achievement=([^&]+)/) || [])[1] || '';
-          name = slug.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-        }
+        var slug = ((a.getAttribute('href') || '').match(/achievement=([^&]+)/) || [])[1] || '';
+        if (!name) name = slug.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
         var tierEl = a.querySelector('.achievement-tier-label');
         var tier = tierEl ? tierEl.textContent.trim() : '';
         if (src.startsWith('/')) src = 'https://github.com' + src;
-        items.push({ name: name, src: src, tier: tier });
+        items.push({ name: name, slug: slug, src: src, tier: tier });
       });
 
       // de-dupe by name
@@ -2393,9 +2612,14 @@
       if (!items.length) { wrap.style.display = 'none'; return; }
 
       items.forEach(function(it) {
-        var el = document.createElement('div');
+        var el = document.createElement('a');
         el.className = 'ach-item';
-        el.title = it.name + (it.tier ? ' ' + it.tier : '');
+        el.href = 'https://github.com/' + encodeURIComponent(user) + '?achievement=' + encodeURIComponent(it.slug) + '&tab=achievements';
+        el.target = '_blank'; el.rel = 'noopener';
+        el.setAttribute('aria-describedby', 'ach-tip');
+        el.dataset.slug = it.slug;
+        el.dataset.name = it.name;
+        el.dataset.tier = it.tier;
         var img = document.createElement('img');
         img.src = it.src; img.alt = it.name; img.loading = 'lazy';
         var nameEl = document.createElement('span');
@@ -2416,6 +2640,82 @@
       wrap.style.display = 'none';
     }
   }
+
+  // GitHub loads achievement descriptions client-side, so they are not in the scraped HTML.
+  // Source: github.com/drknzz/GitHub-Achievements. Tier labels x2/x3/x4 are Bronze/Silver/Gold.
+  var ACHIEVEMENTS = {
+    'pull-shark':          { desc: 'Opened pull requests that got merged.', unit: 'merged PRs', tiers: [2, 16, 128, 1024] },
+    'pair-extraordinaire': { desc: 'Co-authored commits on merged pull requests.', unit: 'co-authored merged PRs', tiers: [1, 10, 24, 48] },
+    'starstruck':          { desc: 'Created a repository that many people starred.', unit: 'stars', tiers: [16, 128, 512, 4096] },
+    'galaxy-brain':        { desc: 'Gave answers that were accepted in GitHub Discussions.', unit: 'accepted answers', tiers: [2, 8, 16, 32] },
+    'quickdraw':           { desc: 'Closed an issue or pull request within 5 minutes of opening it.' },
+    'yolo':                { desc: 'Merged a pull request without a code review.' },
+    'public-sponsor':      { desc: 'Sponsored an open source contributor through GitHub Sponsors.' },
+    'arctic-code-vault-contributor': { desc: 'Contributed code to a repository in the 2020 GitHub Archive Program. No longer earnable.' },
+    'mars-2020-contributor': { desc: 'Contributed code to a repository used in the Mars 2020 Helicopter Mission. No longer earnable.' }
+  };
+  var TIER_NAMES = ['Default', 'Bronze', 'Silver', 'Gold'];
+
+  function achievementLevel(tierLabel) {
+    var n = parseInt(String(tierLabel || '').replace(/\D/g, ''), 10);
+    return n >= 2 && n <= 4 ? n - 1 : 0;
+  }
+
+  function achievementTip(el) {
+    var info = ACHIEVEMENTS[el.dataset.slug];
+    var level = achievementLevel(el.dataset.tier);
+    var tip = $('ach-tip');
+    tip.textContent = '';
+
+    var title = document.createElement('div');
+    title.className = 'ach-tip-title';
+    title.textContent = el.dataset.name + (info && info.tiers ? ' · ' + TIER_NAMES[level] : '');
+    tip.appendChild(title);
+
+    var desc = document.createElement('div');
+    desc.className = 'ach-tip-desc';
+    desc.textContent = info ? info.desc : 'GitHub has not published what this one is for.';
+    tip.appendChild(desc);
+
+    var progress = document.createElement('div');
+    progress.className = 'ach-tip-progress';
+    if (info && info.tiers) {
+      var have = info.tiers[level].toLocaleString() + '+ ' + info.unit;
+      progress.textContent = level < 3
+        ? have + '. Next: ' + TIER_NAMES[level + 1] + ' at ' + info.tiers[level + 1].toLocaleString() + '.'
+        : have + '. Highest tier.';
+    } else if (info) {
+      progress.textContent = 'One-time achievement.';
+    }
+    if (progress.textContent) tip.appendChild(progress);
+    return tip;
+  }
+
+  function showAchievementTip(el) {
+    var tip = achievementTip(el);
+    tip.hidden = false;
+    var r = el.getBoundingClientRect();
+    var left = Math.min(Math.max(8, r.left), window.innerWidth - tip.offsetWidth - 8);
+    var top = r.bottom + 8;
+    if (top + tip.offsetHeight > window.innerHeight - 8) top = r.top - tip.offsetHeight - 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function hideAchievementTip() { $('ach-tip').hidden = true; }
+
+  ['mouseover', 'focusin'].forEach(function(type) {
+    $('ach-list').addEventListener(type, function(e) {
+      var item = e.target.closest('.ach-item');
+      if (item) showAchievementTip(item);
+    });
+  });
+  ['mouseout', 'focusout'].forEach(function(type) {
+    $('ach-list').addEventListener(type, function(e) {
+      var item = e.target.closest('.ach-item');
+      if (item && !item.contains(e.relatedTarget)) hideAchievementTip();
+    });
+  });
+  $('ach-list').addEventListener('scroll', hideAchievementTip);
 
   // ── Repo multi-select ──
   var allRepos = [];
@@ -2478,6 +2778,7 @@
     repoDropdownOpen = !repoDropdownOpen;
     dd.classList.toggle('open', repoDropdownOpen);
     sel.classList.toggle('open', repoDropdownOpen);
+    sel.setAttribute('aria-expanded', String(repoDropdownOpen));
     if (repoDropdownOpen && allRepos.length === 0) fetchAllRepos();
     if (repoDropdownOpen) setTimeout(function() { $('repo-search').focus(); }, 50);
   }
@@ -2487,13 +2788,14 @@
       repoDropdownOpen = false;
       $('repo-dropdown').classList.remove('open');
       $('repo-select').classList.remove('open');
+      $('repo-select').setAttribute('aria-expanded', 'false');
     }
   });
 
   async function fetchAllRepos() {
     html('repo-options', '<div class="repo-loading">Loading repos...</div>');
-    var token = $('gh-token').value.trim();
-    if (!token) { html('repo-options', '<div class="repo-loading">Enter token first</div>'); return; }
+    var token = ghToken();
+    if (!hasAuth()) { html('repo-options', '<div class="repo-loading">Enter token first</div>'); return; }
     try {
       var page = 1, all = [];
       while (page <= 5) {

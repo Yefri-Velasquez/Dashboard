@@ -23,16 +23,44 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:3000',
   'http://127.0.0.1:3000',
 ]);
+// nginx always forwards Host "localhost"; anything else is a direct hit or a DNS-rebinding attempt.
+const ALLOWED_HOSTS = new Set(['localhost', 'localhost:4000', '127.0.0.1:4000']);
+// Cross-site pages can send "simple" POSTs without a CORS preflight. Requiring a custom
+// header forces the preflight, which this server only answers for ALLOWED_ORIGINS.
+const REQUIRED_HEADER = 'x-dashboard';
+
+function rejectUntrusted(req, res) {
+  if (!ALLOWED_HOSTS.has(req.headers.host || '')) {
+    console.warn('[auth-broker] rejected host=%s %s %s', req.headers.host, req.method, req.url);
+    res.writeHead(403).end();
+    return true;
+  }
+  if (req.method !== 'OPTIONS' && req.url !== '/health' && req.headers[REQUIRED_HEADER] !== '1') {
+    console.warn('[auth-broker] rejected missing X-Dashboard header %s %s', req.method, req.url);
+    res.writeHead(403).end();
+    return true;
+  }
+  return false;
+}
 const TOKEN_TTL_MS = 30 * 1000;
 
 // ── Token sourcing via `gh auth token` ──
 let cachedToken = null;
 let cachedAt = 0;
+let pendingToken = null;
 
 function getGitHubToken() {
   if (cachedToken && (Date.now() - cachedAt) < TOKEN_TTL_MS) {
     return Promise.resolve(cachedToken);
   }
+  // Concurrent requests share one `gh` call instead of each spawning a keychain read.
+  if (!pendingToken) {
+    pendingToken = readGitHubToken().finally(() => { pendingToken = null; });
+  }
+  return pendingToken;
+}
+
+function readGitHubToken() {
   return new Promise((resolve, reject) => {
     execFile('gh', ['auth', 'token'], { timeout: 5000 }, (err, stdout, stderr) => {
       if (err) {
@@ -106,10 +134,11 @@ const server = http.createServer((req, res) => {
   if (allowOrigin) {
     res.setHeader('Access-Control-Allow-Origin', allowOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Dashboard');
     res.setHeader('Vary', 'Origin');
   }
 
+  if (rejectUntrusted(req, res)) return;
   if (req.method === 'OPTIONS') { res.writeHead(204).end(); return; }
 
   if (req.method === 'GET' && req.url === '/health') {
