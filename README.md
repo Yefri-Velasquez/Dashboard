@@ -10,7 +10,9 @@ A personal, **read-only** GitHub developer dashboard. Shows your PRs, the merge 
 
 ## Security model — read this first
 
-This dashboard is intentionally **view-only**. It cannot close PRs, push code, modify notifications, or take any action on your behalf — by design.
+This dashboard is **read-mostly**. It has exactly two write actions, both triggered only by an explicit click: **Close** (closes a PR, after a confirm dialog) and **Watch/Unwatch** (sets your GitHub subscription on a PR). Nothing writes in the background.
+
+With the read-only token below, both write actions fail safely: Close shows an error, and Unwatch falls back to hiding the PR's notifications in this dashboard only. To enable them, use the auth broker (Option C) or add `Pull requests: Write` to the token.
 
 ### What this means for your token
 
@@ -34,14 +36,14 @@ Create one at [github.com/settings/personal-access-tokens/new](https://github.co
 | Repository | Metadata | Read (mandatory) |
 | Account | Notifications | Read |
 
-Select only the repos you want the dashboard to monitor. **Do not grant any `Write` permissions** — the dashboard does not use them.
+Select only the repos you want the dashboard to monitor. Grant `Write` only if you want the Close and Watch buttons to work — everything else needs `Read` only.
 
 ### Where the token lives
 
 - **Only in your browser's `localStorage`** — never sent to any backend
 - **Origin-scoped**: only your browser, on your specific dashboard URL, can read it
 - **Never committed**: the token is not in this repo and never will be
-- All API calls go directly from your browser to `api.github.com` over HTTPS
+- All API calls go directly from your browser to `api.github.com` over HTTPS (or, with the auth broker, through it — see Option C)
 
 ### What this does NOT protect against
 
@@ -81,6 +83,16 @@ docker compose up -d
 
 Local Docker also enables the **achievements badge scrape** (a small nginx proxy that fetches your `?tab=achievements` page server-side, since GitHub's CORS blocks browser fetches). Pages-hosted version skips this.
 
+### Option C — Local Docker + auth broker (token never in the browser)
+
+```bash
+node auth-broker.js      # proxies GitHub calls with the token from `gh auth token`
+node notify-helper.js    # optional: native macOS notifications
+docker compose up -d
+```
+
+Both helpers listen on `127.0.0.1` only and reject any request that lacks the `X-Dashboard: 1` header or has an unexpected `Host`. The custom header forces a CORS preflight, so other websites open in your browser cannot send requests through the broker with your `gh` token.
+
 ---
 
 ## Features
@@ -104,7 +116,12 @@ Local Docker also enables the **achievements badge scrape** (a small nginx proxy
 | `GET /repos/:o/:r/pulls/:n` | Verify PR author = you |
 | `POST /graphql` | Heatmap, merge queue, contribution stats |
 
-All read-only. No `PATCH`, `PUT`, `POST` (other than GraphQL queries), or `DELETE`.
+Writes, only on an explicit click:
+
+| Endpoint | Why |
+|---|---|
+| `PATCH /repos/:o/:r/pulls/:n` | **Close** button (after confirmation) |
+| `PUT /repos/:o/:r/issues/:n/subscription` | **Watch/Unwatch** button |
 
 ---
 
